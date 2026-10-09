@@ -2,6 +2,12 @@
 
 Ce fichier donne à Claude Code tout le contexte du projet. Lis-le en entier avant toute action.
 
+## 0. État d'avancement (à mettre à jour au fil du hackathon)
+
+- Fait : concept choisi (Cap 18), pitch d'une minute rédigé (voir §9), environnement installé (Git, VS Code, Claude Code), dépôt Git `cap18` initialisé avec ce fichier.
+- Aucune ligne de code écrite pour l'instant.
+- À faire en premier, avec l'équipe : vérifier le règlement (code préparé avant l'événement autorisé ou non), définir la composition de l'équipe (profils fonctionnels / techniques), valider l'architecture et la répartition des tâches, créer le dépôt GitHub partagé.
+
 ## 1. Contexte de l'événement
 
 - Hackathon Sopra Steria 2026, thème « Banque de demain » : imaginer une banque plus utile, plus sûre et plus inclusive.
@@ -90,3 +96,14 @@ Mode « témoin » : le parent ne voit pas le solde, il est seulement alerté po
 - RGPD et consentement : accès aux données des parents uniquement avec leur accord ; mode témoin choisi et révocable par le jeune majeur.
 - Responsabilité : les aides sont des estimations, avec renvoi vers les simulateurs officiels.
 - Ton : pas moralisateur, ce sont les règles du jeune, pas celles de la banque.
+
+## 9. Scénario et pitch d'une minute (samedi 15h30)
+
+### Scénario de Léa
+Mars, terminale, à Aurillac. Léa a trois vœux : un BUT à Lyon, une licence à Bordeaux, une autre à Clermont. Ses parents lui demandent ce que ça va coûter ; personne ne sait. Personne ne lui dit non plus qu'en tant que boursière de lycée, partir à Lyon (hors de son académie) lui donnerait droit à 500 € d'aide à la mobilité. Elle choisit Lyon sur un coup de cœur, fête ses 18 ans le 3 septembre, emménage le 4. Du jour au lendemain, sa mère ne voit plus son compte. Caution, abonnements, repas commandés à 1h du matin pendant les partiels : le 20 octobre, elle est à découvert. Elle ouvre un compte dans une néobanque. Sa banque l'a vue grandir pendant 17 ans, et l'a perdue en 7 semaines.
+
+### Pitch (environ 150 mots, structure de l'exemple Access Map)
+- Accroche et problématique : « Mars, terminale. Léa a trois vœux et une seule question : est-ce qu'on peut se le permettre ? Personne ne sait lui répondre. Elle choisit au hasard, part, et le jour de ses 18 ans, plus personne ne voit son compte. Le 20 octobre, elle est à découvert.
+- Solution : Notre réponse : Cap 18, intégrée à l'application bancaire. Pour chaque vœu, Cap 18 calcule le coût mensuel réel, moins les aides auxquelles le jeune a droit, souvent sans le savoir. Avec l'accord des parents, il voit ce qui reste à financer, et comment y arriver.
+- Portée : Puis, à 18 ans, le contrôle parental ne disparaît pas : il devient personnel. Le jeune choisit ses propres garde-fous. Pour la banque, c'est accompagner un client au moment précis où il la choisit pour vingt ans.
+- Valeurs : Cap 18 : parce que devenir autonome, ça se prépare. »
