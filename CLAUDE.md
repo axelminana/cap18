@@ -49,7 +49,7 @@ Ce fichier donne à Claude Code tout le contexte du projet. Lis-le en entier ava
 - Les paiements en ligne par carte passent déjà par une validation dans l'appli bancaire (authentification forte, 3-D Secure) : la pause s'insère là où la banque intervient déjà.
 - Chaque transaction carte porte un code de catégorie du commerçant (MCC) : il permet de reconnaître automatiquement les catégories évidentes.
 
-**Persona :** Hugo, 19 ans, premier appartement, premier job étudiant. Objectif : voir §10 (permis ou voiture, à harmoniser avec le pitch).
+**Persona :** Léa, 18 ans, premier appartement, premier job étudiant. Objectif : voir §10 (permis ou voiture, à harmoniser avec le pitch).
 
 **Proposition de valeur pour la banque :** engagement quotidien d'un jeune client, image de banque bienveillante, et épargne qui reste dans la banque, sur un produit adapté à l'objectif.
 
@@ -78,11 +78,11 @@ En tant que jeune client, je souhaite voir chaque fin de mois ce que j'ai écono
 **US4 (facultative) — Tableau de score personnel**
 Séries de mois réussis, achats évités, montant total épargné, badges. **Strictement personnel : pas de comparaison entre amis.**
 
-**Démo cible :** deux écrans côte à côte. À gauche, une fausse boutique en ligne (ex. baskets à 89 €, 1h du matin). À droite, l'appli bancaire d'Hugo en format mobile. « Payer » → notification de pause avec la raison → (variante A) il renonce → félicitations et épargne ; (variante B) il attend la fin du délai, repaie et l'achat passe. Puis on avance au bilan de fin de mois et à la progression vers l'objectif.
+**Démo cible :** deux écrans côte à côte. À gauche, une fausse boutique en ligne (ex. baskets à 89 €, 1h du matin). À droite, l'appli bancaire de Léa en format mobile. « Payer » → notification de pause avec la raison → (variante A) elle renonce → félicitations et épargne ; (variante B) elle attend la fin du délai, repaie et l'achat passe. Puis on avance au bilan de fin de mois et à la progression vers l'objectif.
 
 ## 4. Données (toutes fictives)
 
-- `profil.json` : Hugo (revenus, dépenses obligatoires, budget total en ligne, limites par catégorie, délais par catégorie, option blocage strict, objectif).
+- `profil.json` : Léa (revenus, dépenses obligatoires, budget total en ligne, limites par catégorie, délais par catégorie, option blocage strict, objectif).
 - `commercants.json` : commerçants fictifs ou génériques avec leur catégorie (table de correspondance pour la détection automatique, inspirée des codes MCC).
 - `transactions.json` : plusieurs mois de transactions fictives, avec canal (`en_ligne` / `magasin`), commerçant, catégorie, montant, date et heure.
 - `achats_suspendus` : stockage des achats mémorisés (en mémoire ou en base).
@@ -171,6 +171,13 @@ Règle simple et explicable (ex. 50 % du montant évité, arrondi), sans dépass
 - Ne pas ajouter de fonctionnalités hors du périmètre ci-dessus sans demander.
 - Priorité absolue : une démo qui tourne sans crash. En cas de manque de temps, couper dans cet ordre : US4, option blocage strict, détection automatique (garder du pré-rempli), déclencheurs secondaires (garder « dépassement de limite » et « achat nocturne »).
 - Répondre en français.
+- Tenir `ARCHITECTURE.md` à jour à la fin de chaque étape (technologies, arborescence, état d'avancement, choix de conception).
+- **Routine de travail, à chaque étape du plan :**
+  1. une seule étape à la fois ;
+  2. coder l'étape, puis expliquer le code à Axel ;
+  3. lancer les tests (`pytest`) ;
+  4. si tout passe : mettre à jour `ARCHITECTURE.md` et faire un commit avec un message clair ;
+  5. toutes les deux ou trois étapes réussies : `git push` vers GitHub (`origin`, branche `main`).
 
 ## 8. Vigilance (à mentionner au jury)
 
@@ -182,17 +189,17 @@ Règle simple et explicable (ex. 50 % du montant évité, arrondi), sans dépass
 
 ## 9. Pitch d'une minute (samedi 15h30)
 
-« Hugo, 19 ans. Premier appart. Premier job étudiant. Et un rêve tout simple : se payer son permis.
-1 h du matin. Il scrolle. Des baskets à 89 €. Un clic.
+« Léa, 18 ans. Premier appart. Premier job étudiant. Et un rêve tout simple : se payer son permis.
+1 h du matin. Elle scrolle. Des baskets à 89 €. Un clic.
 Le lendemain ? Un Uber Eats. Puis un autre.
-Le 20 du mois, Hugo est à découvert. Et son permis, lui, attendra encore.
-Hugo n'a rien fait de grave. Il a juste tout acheté… sans y penser.
-À 19 ans, on nous donne la liberté de dépenser. Mais personne ne nous apprend à choisir.
+Le 20 du mois, Léa est à découvert. Et son permis, lui, attendra encore.
+Léa n'a rien fait de grave. Elle a juste tout acheté… sans y penser.
+À 18 ans, on nous donne la liberté de dépenser. Mais personne ne nous apprend à choisir.
 Notre solution : Cap 18, directement dans l'appli bancaire.
-Hugo y entre ses dépenses obligatoires et fixe sa propre limite.
+Léa y entre ses dépenses obligatoires et fixe sa propre limite.
 À 1 h du matin, avant de valider ses baskets, l'appli lui laisse quelques minutes de réflexion pour confirmer ou non son achat.
-S'il renonce, l'appli le félicite et lui propose de mettre une partie du budget prévu en épargne, avec une somme conseillée.
-Et chaque fin de mois, il voit ce qu'il a épargné… et à quel point il se rapproche de son permis.
+Si elle renonce, l'appli la félicite et lui propose de mettre une partie du budget prévu en épargne, avec une somme conseillée.
+Et chaque fin de mois, elle voit ce qu'elle a épargné… et à quel point elle se rapproche de son permis.
 Cap 18. Dépenser, c'est facile. Choisir… ça s'apprend. »
 
 ## 10. Questions ouvertes (à trancher)

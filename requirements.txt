@@ -1,0 +1,5 @@
+# Versions figées pour que la démo se réinstalle à l'identique.
+fastapi==0.143.0   # API web qui expose la logique métier en JSON
+uvicorn==0.54.0    # serveur qui fait tourner l'application FastAPI
+pydantic==2.14.0   # modèles de données et validation des fichiers JSON
+pytest==9.1.1      # tests des fonctions métier
