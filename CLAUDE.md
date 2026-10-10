@@ -8,8 +8,8 @@ Ce fichier donne à Claude Code tout le contexte du projet. Lis-le en entier ava
 - **Décisions du samedi 14h30 :** délais de réflexion par catégorie (choisis par l'utilisateur, avec valeurs conseillées), mémorisation de l'achat suspendu, limites par catégorie + budget total en ligne, détection automatique des catégories évidentes, objectif d'épargne avec horizon et plan conseillé, option de blocage strict (désactivée par défaut).
 - **Équipe code :** Axel code, avec l'aide de Claude Code. Le code doit rester compréhensible et explicable par Axel.
 - Fait : concept, pitch d'une minute (voir §9), environnement installé, dépôt Git `cap18`.
-- Samedi 10/10 après-midi : étapes 0 à 8 du plan terminées (voir `ARCHITECTURE.md`) : modèles, horloge, règles, mémorisation, épargne, orchestration, API FastAPI, front (boutique + appli bancaire + barre de démo). 113 tests pytest.
-- Prochaine étape : Axel lance le serveur et répète la démo ; US4 (tableau de score) en option.
+- Samedi 10/10 après-midi : étapes 0 à 9 du plan terminées (voir `ARCHITECTURE.md`) : modèles, horloge, règles, mémorisation, épargne, orchestration, API FastAPI, front (boutique + appli bancaire + barre de démo), tableau de score US4. 125 tests pytest.
+- Prochaine étape : Axel lance le serveur et répète la démo ; préparer les supports des jurys (user stories avec tests et maquettes, présentation technique).
 
 ## 1. Contexte de l'événement
 

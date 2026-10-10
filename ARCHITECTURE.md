@@ -2,7 +2,7 @@
 
 Document de référence pour le jury technique. Mis à jour à chaque étape du développement.
 
-**Dernière mise à jour :** samedi 10 octobre 2026 — étape 8 (front). La démo complète est utilisable.
+**Dernière mise à jour :** samedi 10 octobre 2026 — étape 9 (tableau de score US4). Plan de développement terminé.
 
 ## 1. Vue d'ensemble
 
@@ -57,10 +57,11 @@ Document de référence pour le jury technique. Mis à jour à chaque étape du 
 | `app/regles.py` | Pause de réflexion, raisons affichées, blocage strict | ✅ fait |
 | `app/suspension.py` | Mémorisation des achats suspendus (déblocage, expiration 24 h) | ✅ fait |
 | `app/epargne.py` | Plan conseillé, somme conseillée après renoncement, bilan mensuel, progression | ✅ fait |
-| `app/paiement.py` | `Compte` (profil + transactions + achats suspendus), `payer`, `renoncer`, `verser_epargne` | ✅ fait |
+| `app/paiement.py` | `Compte` (profil, transactions, achats suspendus, achats évités, versements), `payer`, `renoncer`, `verser_epargne` | ✅ fait |
+| `app/score.py` | Tableau de score personnel : séries, achats évités, total épargné, comparaison entre mois, badges | ✅ fait |
 | `app/main.py` | API FastAPI (routes `/api/...`) + service des pages de `static/` | ✅ fait |
 | `static/` | `index.html` (démo côte à côte + barre de contrôle), `boutique.html`, `banque.html`, `style.css`, `commun.js`, `demo.js`, `boutique.js`, `banque.js` | ✅ fait |
-| `tests/` | Un fichier de tests par module (`test_models.py` : 14, `test_horloge.py` : 10, `test_regles.py` : 23, `test_suspension.py` : 13, `test_epargne.py` : 24, `test_paiement.py` : 10, `test_api.py` : 19 — 113 tests) | ✅ fait |
+| `tests/` | Un fichier de tests par module (`test_models.py` : 14, `test_horloge.py` : 10, `test_regles.py` : 23, `test_suspension.py` : 13, `test_epargne.py` : 24, `test_paiement.py` : 10, `test_score.py` : 11, `test_api.py` : 20 — 125 tests) | ✅ fait |
 
 ## 4. Plan de développement
 
@@ -75,7 +76,7 @@ Document de référence pour le jury technique. Mis à jour à chaque étape du 
 | 6 | Orchestration d'un paiement | ✅ fait |
 | 7 | API FastAPI | ✅ fait |
 | 8 | Front statique | ✅ fait (répétition de la démo à faire par Axel) |
-| 9 | (facultatif) Tableau de score US4 | à faire |
+| 9 | Tableau de score US4 | ✅ fait |
 
 ## 5. Choix de conception
 
@@ -93,6 +94,7 @@ Document de référence pour le jury technique. Mis à jour à chaque étape du 
 - **API (`main.py`) :** un seul objet `EtatDemo` en mémoire (compte de Léa + horloge, démo au 10/10/2026 à 1 h). Chaque route lit l'état, appelle une fonction métier, enregistre le nouvel état. La boutique n'envoie que le commerçant et le montant : la catégorie est **détectée automatiquement** via `commercants.json` (comme un code MCC). Erreurs renvoyées proprement : 404 (commerçant inconnu, aucun achat à abandonner), 400 (temps en arrière), 422 (donnée invalide, via Pydantic). Les montants `Decimal` sont envoyés en JSON sous forme de texte (`"89"`) pour garder les centimes exacts. Libellés lisibles des catégories (`LIBELLES_CATEGORIES`) pour les messages.
 - **Front (`static/`) :** HTML + CSS + JavaScript sans framework. `index.html` place la boutique et le téléphone côte à côte dans deux `iframe`, avec une barre pour piloter l'horloge (+1 / +5 / +30 min, fin du mois, réinitialiser). La boutique n'envoie que commerçant + prix. L'appli bancaire interroge `/api/etat` et `/api/bilan` chaque seconde et ne redessine que si la réponse a changé ; elle affiche les achats en pause (raisons + temps restant + « Je renonce »), les félicitations avec la somme conseillée, la carte de fin de mois (tout / une partie / rien), l'objectif, le budget, l'historique et le formulaire « Mon contrat ». Aucun calcul métier en JavaScript ; tout texte venant du serveur est échappé avant affichage. L'achat suspendu garde ses raisons (`AchatSuspendu.regles`) pour que l'appli puisse les afficher ; les délais conseillés (`DELAIS_CONSEILLES`) et libellés sont fournis par l'API.
 - **Temps de la démo :** l'horloge simulée n'avance que par les boutons ; le temps restant affiché se met donc à jour quand on avance l'heure (pas de compte à rebours qui défile seul), ce qui rend la démo reproductible.
+- **Tableau de score (`score.py`, US4) :** strictement personnel (aucune comparaison entre utilisateurs) et uniquement positif. Le `Compte` garde la trace des achats évités (à chaque renoncement) et des versements (montant > 0). `calculer_score` renvoie : série en cours et record de mois où le budget est respecté, nombre et montant des achats évités, total épargné avec l'appli, progression, économies de chaque mois terminé, meilleur mois, écart avec le mois précédent (affiché seulement s'il est positif), et 6 badges (premier achat évité, premier mois réussi, 3 mois de suite, 100 € épargnés, objectif à 25 % et 50 %), les badges non obtenus étant affichés « à débloquer ». Onglet « Mon score » dans l'appli ; `banque.html#score` ouvre directement l'onglet.
 - **État passé en paramètre :** la liste des achats suspendus est donnée à la fonction, qui renvoie la nouvelle liste. Seule l'API garde l'état en mémoire.
 
 
@@ -114,6 +116,7 @@ Documentation interactive de l'API : http://127.0.0.1:8000/docs
 |---|---|---|
 | GET | `/api/etat` | Profil, plan conseillé, progression, budget restant, achats en pause (avec secondes restantes) |
 | GET | `/api/commercants` | Commerçants de la boutique |
+| GET | `/api/score` | Tableau de score personnel + badges |
 | GET | `/api/bilan` | Historique des mois terminés + mois en cours |
 | PUT | `/api/profil` | Modifier le contrat (limites, délais, blocage strict, objectif) |
 | POST | `/api/paiement` | `{commercant, montant, canal?}` → accepté / pause / refusé |

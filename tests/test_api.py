@@ -135,3 +135,15 @@ def test_l_appli_recoit_les_raisons_de_la_pause_et_les_libelles():
     assert {r["code"] for r in donnees["suspendus"][0]["regles"]} == {"confirmation", "limite_categorie"}
     assert donnees["libelles_categories"]["vetements"] == "vêtements"
     assert donnees["delais_conseilles"]["vetements"] == 30
+
+
+# --- Tableau de score (US4) ---
+
+def test_score_apres_renoncement_et_epargne():
+    client.post("/api/paiement", json=BASKETS)
+    client.post("/api/renoncer", json=BASKETS)
+    client.post("/api/epargner", json={"montant": 44})
+    donnees = client.get("/api/score").json()
+    assert donnees["score"]["achats_evites"] == 1
+    assert donnees["score"]["total_epargne"] == "44"
+    assert "premier_achat_evite" in {b["code"] for b in donnees["badges"] if b["obtenu"]}

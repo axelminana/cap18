@@ -19,6 +19,7 @@ from app.epargne import bilan_mensuel, budget_restant, historique, plan_conseill
 from app.horloge import Horloge
 from app.models import DELAIS_CONSEILLES, LIBELLES_CATEGORIES, Canal, Profil, Transaction, charger_donnees
 from app.paiement import compte_initial, payer, renoncer, verser_epargne
+from app.score import calculer_score
 from app.suspension import est_expire
 
 # La démo commence le samedi 10 octobre 2026 à 1 h du matin.
@@ -105,6 +106,13 @@ def lire_bilan():
     }
 
 
+@app.get("/api/score")
+def lire_score():
+    """Tableau de score personnel (US4)."""
+    score, badges = calculer_score(etat.compte, etat.horloge.maintenant().date())
+    return {"score": score, "badges": badges}
+
+
 # --- Mon contrat (US1) ---
 
 @app.put("/api/profil")
@@ -146,7 +154,7 @@ def renoncer_achat(demande: DemandeRenoncement):
 
 @app.post("/api/epargner")
 def epargner_montant(demande: DemandeEpargne):
-    etat.compte = verser_epargne(etat.compte, demande.montant)
+    etat.compte = verser_epargne(etat.compte, demande.montant, etat.horloge.maintenant())
     objectif = etat.compte.profil.objectif
     return {"objectif": objectif, "progression": progression(objectif)}
 

@@ -15,9 +15,25 @@ from enum import Enum
 from pydantic import BaseModel
 
 from app.epargne import PropositionEpargne, budget_restant, epargner, proposition_apres_renoncement
-from app.models import Donnees, Profil, Transaction
+from app.models import Categorie, Donnees, Profil, Transaction
 from app.regles import RegleDeclenchee, Statut, evaluer_achat
 from app.suspension import AchatSuspendu, EtatTentative, memoriser, retirer, verifier_tentative
+
+
+class AchatEvite(BaseModel):
+    """Un achat auquel Léa a renoncé (pour le tableau de score)."""
+
+    commercant: str
+    categorie: Categorie
+    montant: Decimal
+    date: datetime
+
+
+class Versement(BaseModel):
+    """Un versement vers l'objectif fait depuis l'appli (pour le tableau de score)."""
+
+    montant: Decimal
+    date: datetime
 
 
 class Compte(BaseModel):
@@ -26,6 +42,8 @@ class Compte(BaseModel):
     profil: Profil
     transactions: list[Transaction]
     suspendus: list[AchatSuspendu] = []
+    achats_evites: list[AchatEvite] = []
+    versements: list[Versement] = []
 
 
 def compte_initial(donnees: Donnees) -> Compte:
@@ -108,14 +126,23 @@ def renoncer(
     trouve = [s for s in compte.suspendus if s.commercant == commercant and s.montant == montant]
     if not trouve:
         raise ValueError("Aucun achat suspendu ne correspond à ce commerçant et ce montant.")
-    nouveau = compte.model_copy(update={"suspendus": retirer(trouve[0], compte.suspendus)})
+    evite = AchatEvite(
+        commercant=commercant, categorie=trouve[0].categorie, montant=montant, date=maintenant
+    )
+    nouveau = compte.model_copy(update={
+        "suspendus": retirer(trouve[0], compte.suspendus),
+        "achats_evites": compte.achats_evites + [evite],
+    })
     restant = budget_restant(compte.profil, compte.transactions, maintenant.date())
     proposition = proposition_apres_renoncement(montant, restant, compte.profil.objectif)
     return nouveau, proposition
 
 
-def verser_epargne(compte: Compte, montant: Decimal) -> Compte:
+def verser_epargne(compte: Compte, montant: Decimal, maintenant: datetime) -> Compte:
     """Verse un montant vers l'objectif (après un renoncement ou au bilan du mois)."""
     objectif = epargner(compte.profil.objectif, montant)
     profil = compte.profil.model_copy(update={"objectif": objectif})
-    return compte.model_copy(update={"profil": profil})
+    versements = compte.versements
+    if montant > 0:  # « ne rien épargner » n'est pas un versement
+        versements = versements + [Versement(montant=montant, date=maintenant)]
+    return compte.model_copy(update={"profil": profil, "versements": versements})

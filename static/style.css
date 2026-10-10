@@ -75,7 +75,7 @@ button { font: inherit; cursor: pointer; }
 .heure { font-size: 0.8rem; opacity: 0.9; text-align: right; }
 
 .onglets { display: flex; background: #fff; border-bottom: 1px solid #e5e7eb; position: sticky; top: 0; }
-.onglets button { flex: 1; border: 0; background: none; padding: 12px 4px; color: var(--gris); border-bottom: 3px solid transparent; }
+.onglets button { flex: 1; border: 0; background: none; padding: 12px 2px; font-size: 0.85rem; color: var(--gris); border-bottom: 3px solid transparent; }
 .onglets button.actif { color: var(--vert); border-bottom-color: var(--vert); font-weight: 600; }
 
 .appli main { padding: 12px; }
@@ -109,6 +109,22 @@ button { font: inherit; cursor: pointer; }
 .historique li { display: flex; justify-content: space-between; gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--gris-clair); }
 .historique li:last-child { border-bottom: 0; }
 .historique li span:first-child { text-transform: capitalize; }
+
+/* Onglet « Mon score » */
+.tuiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-bottom: 12px; }
+.tuile { background: #fff; border-radius: var(--rayon); padding: 12px; box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06); display: flex; flex-direction: column; gap: 2px; font-size: 0.85rem; }
+.tuile .valeur { font-size: 1.3rem; font-weight: 700; color: var(--vert); }
+.tuile small { color: var(--gris); }
+.mois-liste { list-style: none; padding: 0; margin: 0 0 8px; }
+.mois-liste li { display: grid; grid-template-columns: 95px 1fr 70px; gap: 8px; align-items: center; padding: 5px 0; font-size: 0.85rem; }
+.mois-nom { text-transform: capitalize; }
+.mois-barre { height: 10px; background: var(--gris-clair); border-radius: 999px; overflow: hidden; }
+.mois-barre span { display: block; height: 100%; background: var(--vert); border-radius: 999px; }
+.mois-valeur { text-align: right; color: var(--gris); }
+.badges { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.badges li { border-radius: 10px; padding: 10px; display: flex; flex-direction: column; gap: 3px; font-size: 0.8rem; }
+.badges li.obtenu { background: var(--vert-clair); }
+.badges li.a-debloquer { background: var(--gris-clair); color: var(--gris); }
 
 /* Formulaire « Mon contrat » */
 #formulaire-contrat label { display: block; margin: 8px 0; font-size: 0.9rem; }

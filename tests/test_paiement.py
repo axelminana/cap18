@@ -57,7 +57,7 @@ def test_variante_a_renoncer_puis_epargner(compte):
     assert proposition.somme_conseillee == Decimal("44")
     assert proposition.message.startswith("Bravo")
 
-    compte = verser_epargne(compte, proposition.somme_conseillee)
+    compte = verser_epargne(compte, proposition.somme_conseillee, datetime(2026, 10, 10, 1, 6))
     assert compte.profil.objectif.deja_epargne == Decimal("194")  # 150 + 44
     assert progression(compte.profil.objectif) == 10
 
@@ -148,5 +148,5 @@ def test_demo_complete_avec_horloge(compte):
     assert octobre.depenses_en_ligne == Decimal("114.79")  # 25,79 + 89
     assert octobre.economies == Decimal("5.21")
 
-    compte = verser_epargne(compte, octobre.economies)
+    compte = verser_epargne(compte, octobre.economies, horloge.maintenant())
     assert compte.profil.objectif.deja_epargne == Decimal("155.21")

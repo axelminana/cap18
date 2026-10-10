@@ -3,6 +3,7 @@
 
 let etat = null;             // dernière réponse de /api/etat
 let bilan = null;            // dernière réponse de /api/bilan
+let score = null;            // dernière réponse de /api/score
 let dernierAffichage = "";   // pour ne redessiner que si quelque chose a changé
 const moisTraites = new Set(); // bilans de fin de mois déjà épargnés ou ignorés
 
@@ -10,11 +11,11 @@ const moisTraites = new Set(); // bilans de fin de mois déjà épargnés ou ign
 
 async function rafraichir() {
   try {
-    [etat, bilan] = await Promise.all([api("etat"), api("bilan")]);
+    [etat, bilan, score] = await Promise.all([api("etat"), api("bilan"), api("score")]);
   } catch (erreur) {
     return; // serveur momentanément injoignable : on réessaie à la seconde suivante
   }
-  const empreinte = JSON.stringify([etat, bilan, [...moisTraites]]);
+  const empreinte = JSON.stringify([etat, bilan, score, [...moisTraites]]);
   if (empreinte === dernierAffichage) return;
   dernierAffichage = empreinte;
 
@@ -24,6 +25,7 @@ async function rafraichir() {
   afficherObjectif();
   afficherBudget();
   afficherHistorique();
+  afficherScore();
 }
 
 // --- Accueil : achats en pause ---
@@ -150,6 +152,56 @@ function afficherHistorique() {
     </article>`;
 }
 
+// --- Onglet Mon score (US4) : strictement personnel, uniquement des encouragements ---
+
+function afficherScore() {
+  const s = score.score;
+  const maximum = Math.max(...s.mois.map((m) => Number(m.economies)), 1);
+  const barres = s.mois.map((m) => `
+    <li>
+      <span class="mois-nom">${nomDuMois(m.annee, m.mois)}</span>
+      <span class="mois-barre"><span style="width: ${(Number(m.economies) / maximum) * 100}%"></span></span>
+      <span class="mois-valeur">${m.budget_respecte ? euros(m.economies) : "dépassé"}</span>
+    </li>`).join("");
+
+  let comparaison = "";
+  if (s.meilleur_mois) {
+    comparaison += `<p>🏆 Meilleur mois : <strong>${nomDuMois(s.meilleur_mois.annee, s.meilleur_mois.mois)}</strong>
+                    (${euros(s.meilleur_mois.economies)} économisés)</p>`;
+  }
+  if (s.ecart_mois_precedent !== null && Number(s.ecart_mois_precedent) > 0) {
+    comparaison += `<p>📈 <strong>+${euros(s.ecart_mois_precedent)}</strong> d'économies par rapport au mois précédent.</p>`;
+  }
+
+  document.getElementById("onglet-score").innerHTML = `
+    <div class="tuiles">
+      <div class="tuile"><span class="valeur">🔥 ${s.serie_en_cours}</span>
+        <span>mois réussi${s.serie_en_cours > 1 ? "s" : ""} de suite</span><small>record : ${s.meilleure_serie}</small></div>
+      <div class="tuile"><span class="valeur">🛑 ${s.achats_evites}</span>
+        <span>achat${s.achats_evites > 1 ? "s" : ""} évité${s.achats_evites > 1 ? "s" : ""}</span><small>${euros(s.montant_evite)} non dépensés</small></div>
+      <div class="tuile"><span class="valeur">💰 ${euros(s.total_epargne)}</span>
+        <span>épargnés avec Cap 18</span></div>
+      <div class="tuile"><span class="valeur">🎯 ${s.progression} %</span>
+        <span>de ton objectif</span></div>
+    </div>
+    <article class="carte">
+      <h2>📊 Mes économies, mois par mois</h2>
+      <ul class="mois-liste">${barres || "<li>Pas encore de mois terminé.</li>"}</ul>
+      ${comparaison}
+    </article>
+    <article class="carte">
+      <h2>🏅 Mes badges</h2>
+      <ul class="badges">
+        ${score.badges.map((b) => `
+          <li class="${b.obtenu ? "obtenu" : "a-debloquer"}">
+            <strong>${b.obtenu ? "🏅" : "🔒"} ${echapper(b.nom)}</strong>
+            <small>${echapper(b.description)}</small>
+          </li>`).join("")}
+      </ul>
+    </article>
+    <p class="mention">Ton score est personnel : il n'est comparé à personne.</p>`;
+}
+
 // --- Onglet Mon contrat (US1) ---
 
 function afficherContrat() {
@@ -231,7 +283,7 @@ async function enregistrerContrat(formulaire) {
 
 function ouvrirOnglet(nom) {
   document.querySelectorAll(".onglets button").forEach((b) => b.classList.toggle("actif", b.dataset.onglet === nom));
-  for (const onglet of ["accueil", "bilan", "contrat"]) {
+  for (const onglet of ["accueil", "bilan", "score", "contrat"]) {
     document.getElementById(`onglet-${onglet}`).hidden = onglet !== nom;
   }
   if (nom === "contrat") afficherContrat();
@@ -264,6 +316,10 @@ document.getElementById("formulaire-contrat").addEventListener("submit", (evenem
   evenement.preventDefault(); // pas de rechargement de page
   enregistrerContrat(evenement.target);
 });
+
+// On peut ouvrir directement un onglet par l'adresse, ex. banque.html#score
+const ongletDemande = location.hash.slice(1);
+if (["bilan", "score"].includes(ongletDemande)) ouvrirOnglet(ongletDemande);
 
 rafraichir();
 setInterval(rafraichir, 1000);
