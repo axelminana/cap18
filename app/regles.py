@@ -56,6 +56,14 @@ def est_achat_surveille(transaction: Transaction) -> bool:
     return transaction.canal == Canal.EN_LIGNE and transaction.categorie not in CATEGORIES_OBLIGATOIRES
 
 
+def achats_en_ligne_du_mois(transactions: list[Transaction], annee: int, mois: int) -> list[Transaction]:
+    """Achats en ligne non nécessaires d'un mois donné (ceux qui comptent dans le budget)."""
+    return [
+        t for t in transactions
+        if est_achat_surveille(t) and t.date_heure.year == annee and t.date_heure.month == mois
+    ]
+
+
 def evaluer_achat(achat: Transaction, profil: Profil, transactions: list[Transaction]) -> Decision:
     # 1. Hors périmètre : achat en magasin ou dépense nécessaire.
     if not est_achat_surveille(achat):
@@ -74,12 +82,7 @@ def evaluer_achat(achat: Transaction, profil: Profil, transactions: list[Transac
     )]
 
     # 3. Raisons supplémentaires, à partir des dépenses en ligne du mois.
-    du_mois = [
-        t for t in transactions
-        if est_achat_surveille(t)
-        and t.date_heure.year == achat.date_heure.year
-        and t.date_heure.month == achat.date_heure.month
-    ]
+    du_mois = achats_en_ligne_du_mois(transactions, achat.date_heure.year, achat.date_heure.month)
     total_mois = sum((t.montant for t in du_mois), Decimal("0"))
     total_categorie = sum((t.montant for t in du_mois if t.categorie == achat.categorie), Decimal("0"))
 
