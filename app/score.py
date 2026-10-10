@@ -30,6 +30,7 @@ class Score(BaseModel):
     montant_evite: Decimal
     total_epargne: Decimal                 # somme des versements faits dans l'appli
     progression: int                       # % de l'objectif atteint
+    objectifs_atteints: int                # objectifs précédents déjà atteints
     mois: list[BilanMensuel]               # mois terminés, du plus ancien au plus récent
     meilleur_mois: BilanMensuel | None
     ecart_mois_precedent: Decimal | None   # économies du dernier mois - celles du mois d'avant
@@ -62,10 +63,10 @@ def badges(score: Score) -> list[Badge]:
               obtenu=score.total_epargne >= 100),
         Badge(code="objectif_25", nom="Objectif à 25 %",
               description="Atteindre le quart de son objectif.",
-              obtenu=score.progression >= 25),
+              obtenu=score.progression >= 25 or score.objectifs_atteints >= 1),
         Badge(code="objectif_50", nom="Objectif à 50 %",
               description="Atteindre la moitié de son objectif.",
-              obtenu=score.progression >= 50),
+              obtenu=score.progression >= 50 or score.objectifs_atteints >= 1),
     ]
 
 
@@ -84,6 +85,7 @@ def calculer_score(compte: Compte, aujourd_hui: date) -> tuple[Score, list[Badge
         montant_evite=sum((a.montant for a in compte.achats_evites), Decimal("0")),
         total_epargne=sum((v.montant for v in compte.versements), Decimal("0")),
         progression=progression(compte.profil.objectif),
+        objectifs_atteints=len(compte.objectifs_atteints),
         mois=bilans,
         meilleur_mois=meilleur_mois,
         ecart_mois_precedent=ecart,

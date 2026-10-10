@@ -203,3 +203,19 @@ def progression(objectif: Objectif) -> int:
     """Pourcentage de l'objectif atteint, entre 0 et 100."""
     pourcentage = int(objectif.deja_epargne * 100 / objectif.montant)
     return min(pourcentage, 100)
+
+
+def objectif_atteint(objectif: Objectif) -> bool:
+    return objectif.deja_epargne >= objectif.montant
+
+
+def surplus(objectif: Objectif) -> Decimal:
+    """Ce qui a été épargné au-delà de l'objectif (0 s'il n'est pas atteint)."""
+    return max(objectif.deja_epargne - objectif.montant, Decimal("0"))
+
+
+def nouvel_objectif(ancien: Objectif, nom: str, montant: Decimal, echeance: date) -> Objectif:
+    """Objectif atteint : on démarre le projet suivant, en reportant ce qui dépasse l'ancien objectif."""
+    if not objectif_atteint(ancien):
+        raise ValueError(f"Ton objectif « {ancien.nom} » n'est pas encore atteint.")
+    return Objectif(nom=nom, montant=montant, echeance=echeance, deja_epargne=surplus(ancien))

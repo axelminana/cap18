@@ -130,8 +130,9 @@ button { font: inherit; cursor: pointer; }
 .badges li.a-debloquer { background: var(--gris-clair); color: var(--gris); }
 
 /* Formulaire « Mon contrat » */
-#formulaire-contrat label { display: block; margin: 8px 0; font-size: 0.9rem; }
-#formulaire-contrat input[type="number"], #formulaire-contrat input[type="text"], #formulaire-contrat input[type="date"], .partie input {
+#formulaire-contrat label, #formulaire-projet label { display: block; margin: 8px 0; font-size: 0.9rem; }
+#formulaire-contrat input[type="number"], #formulaire-contrat input[type="text"], #formulaire-contrat input[type="date"], .partie input,
+#formulaire-projet input {
   display: block; width: 100%; margin-top: 3px; padding: 8px 10px; border: 1px solid #d1d5db; border-radius: 8px; font: inherit;
 }
 #formulaire-contrat label.case { display: flex; gap: 8px; align-items: flex-start; }

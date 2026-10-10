@@ -11,7 +11,7 @@ import pytest
 
 from app.epargne import BilanMensuel
 from app.models import Transaction, charger_donnees
-from app.paiement import compte_initial, payer, renoncer, verser_epargne
+from app.paiement import compte_initial, demarrer_nouvel_objectif, payer, renoncer, verser_epargne
 from app.score import calculer_score, series
 
 AUJOURD_HUI = date(2026, 10, 10)
@@ -111,3 +111,12 @@ def test_badges_de_progression_de_l_objectif(compte):
     assert "objectif_25" in badges and "objectif_50" not in badges
     compte = verser_epargne(compte, Decimal("450"), UNE_HEURE)  # 900 / 1800 = 50 %
     assert "objectif_50" in obtenus(calculer_score(compte, AUJOURD_HUI)[1])
+
+
+
+def test_les_badges_d_objectif_restent_acquis_avec_un_nouveau_projet(compte):
+    compte = verser_epargne(compte, Decimal("1650"), UNE_HEURE)  # 1 800 / 1 800 €
+    compte = demarrer_nouvel_objectif(compte, "Voiture", Decimal("3000"), date(2029, 10, 10))
+    score, badges = calculer_score(compte, AUJOURD_HUI)
+    assert score.progression == 0 and score.objectifs_atteints == 1
+    assert {"objectif_25", "objectif_50"} <= obtenus(badges)

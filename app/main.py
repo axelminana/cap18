@@ -7,7 +7,7 @@ Lancement : uvicorn app.main:app --reload   puis   http://127.0.0.1:8000
 Documentation interactive des routes : http://127.0.0.1:8000/docs
 """
 
-from datetime import datetime
+from datetime import date, datetime
 from decimal import Decimal
 from pathlib import Path
 
@@ -15,10 +15,26 @@ from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from app.epargne import bilan_mensuel, budget_restant, historique, plan_conseille, progression
+from app.epargne import (
+    bilan_mensuel,
+    budget_restant,
+    historique,
+    objectif_atteint,
+    plan_conseille,
+    progression,
+    surplus,
+)
 from app.horloge import Horloge
 from app.models import DELAIS_CONSEILLES, LIBELLES_CATEGORIES, Canal, Profil, Transaction, charger_donnees
-from app.paiement import bilan_a_epargner, compte_initial, epargner_bilan, payer, renoncer, verser_epargne
+from app.paiement import (
+    bilan_a_epargner,
+    compte_initial,
+    demarrer_nouvel_objectif,
+    epargner_bilan,
+    payer,
+    renoncer,
+    verser_epargne,
+)
 from app.score import calculer_score
 from app.suspension import est_expire
 
@@ -67,6 +83,12 @@ class DemandeEpargneBilan(BaseModel):
     montant: Decimal = Field(ge=0)   # 0 = « ne rien épargner ce mois-ci »
 
 
+class DemandeNouvelObjectif(BaseModel):
+    nom: str = Field(min_length=1)
+    montant: Decimal = Field(gt=0)
+    echeance: date
+
+
 class DemandeAvance(BaseModel):
     minutes: int
 
@@ -90,6 +112,8 @@ def lire_etat():
         "profil": compte.profil,
         "plan": plan_conseille(compte.profil.objectif, maintenant.date()),
         "progression": progression(compte.profil.objectif),
+        "objectif_atteint": objectif_atteint(compte.profil.objectif),
+        "surplus": surplus(compte.profil.objectif),
         "budget_restant": budget_restant(compte.profil, compte.transactions, maintenant.date()),
         "suspendus": suspendus,
         "libelles_categories": LIBELLES_CATEGORIES,
@@ -127,6 +151,16 @@ def modifier_profil(profil: Profil):
     """Remplace le contrat de Léa. Pydantic valide tout (limites, délais…) avant d'arriver ici."""
     etat.compte = etat.compte.model_copy(update={"profil": profil})
     return profil
+
+
+@app.post("/api/objectif/nouveau")
+def nouveau_projet(demande: DemandeNouvelObjectif):
+    """Objectif atteint : démarrer le projet suivant (le surplus déjà épargné est reporté)."""
+    try:
+        etat.compte = demarrer_nouvel_objectif(etat.compte, demande.nom, demande.montant, demande.echeance)
+    except ValueError as erreur:
+        raise HTTPException(status_code=400, detail=str(erreur))
+    return etat.compte.profil.objectif
 
 
 # --- Paiement, renoncement, épargne (US2, US3) ---

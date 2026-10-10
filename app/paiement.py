@@ -19,6 +19,7 @@ from app.epargne import (
     PropositionEpargne,
     budget_restant,
     epargner,
+    nouvel_objectif,
     historique,
     proposition_apres_renoncement,
 )
@@ -52,6 +53,7 @@ class Compte(BaseModel):
     achats_evites: list[AchatEvite] = []
     versements: list[Versement] = []
     bilans_traites: list[tuple[int, int]] = []  # (année, mois) déjà épargnés ou ignorés
+    objectifs_atteints: list[str] = []          # noms des objectifs déjà atteints (pour le score)
 
 
 def compte_initial(donnees: Donnees) -> Compte:
@@ -178,3 +180,13 @@ def epargner_bilan(
         raise ValueError(f"Tu ne peux pas épargner plus que tes économies du mois ({bilan.economies} €).")
     nouveau = verser_epargne(compte, montant, maintenant)
     return nouveau.model_copy(update={"bilans_traites": compte.bilans_traites + [(annee, mois)]})
+
+
+def demarrer_nouvel_objectif(compte: Compte, nom: str, montant: Decimal, echeance: date) -> Compte:
+    """Remplace l'objectif atteint par un nouveau projet (le surplus éventuel est reporté)."""
+    ancien = compte.profil.objectif
+    profil = compte.profil.model_copy(update={"objectif": nouvel_objectif(ancien, nom, montant, echeance)})
+    return compte.model_copy(update={
+        "profil": profil,
+        "objectifs_atteints": compte.objectifs_atteints + [ancien.nom],
+    })

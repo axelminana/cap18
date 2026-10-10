@@ -16,12 +16,15 @@ from app.epargne import (
     epargner,
     historique,
     mois_entre,
+    nouvel_objectif,
+    objectif_atteint,
     plan_conseille,
     progression,
     proposition_apres_renoncement,
     somme_conseillee,
     somme_pour_pourcentage,
     sommes_par_pourcentage,
+    surplus,
 )
 from app.models import Objectif, charger_donnees
 
@@ -195,3 +198,25 @@ def test_montant_negatif_refuse():
 def test_progression():
     assert progression(PERMIS) == 8  # 150 / 1800 = 8,3 %
     assert progression(epargner(PERMIS, Decimal("2000"))) == 100  # plafonnée à 100 %
+
+
+# --- Objectif atteint : démarrer le projet suivant ---
+
+def test_objectif_atteint_et_surplus():
+    assert not objectif_atteint(PERMIS)
+    assert surplus(PERMIS) == 0
+    depasse = epargner(PERMIS, Decimal("1700"))  # 1 850 € sur 1 800 €
+    assert objectif_atteint(depasse)
+    assert surplus(depasse) == Decimal("50")
+
+
+def test_nouveau_projet_reporte_le_surplus():
+    depasse = epargner(PERMIS, Decimal("1700"))
+    voiture = nouvel_objectif(depasse, "Première voiture", Decimal("3000"), date(2029, 10, 10))
+    assert (voiture.nom, voiture.montant, voiture.deja_epargne) == ("Première voiture", Decimal("3000"), Decimal("50"))
+    assert progression(voiture) == 1
+
+
+def test_nouveau_projet_refuse_si_objectif_pas_atteint():
+    with pytest.raises(ValueError):
+        nouvel_objectif(PERMIS, "Voiture", Decimal("3000"), date(2029, 10, 10))

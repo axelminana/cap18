@@ -93,6 +93,21 @@ def test_bilan_a_epargner_a_chaque_fin_de_mois_par_l_api():
     assert client.get("/api/bilan").json()["a_epargner"]["mois"] == 11
 
 
+# --- Objectif atteint : nouveau projet ---
+
+def test_nouveau_projet_par_l_api():
+    projet = {"nom": "Première voiture", "montant": 3000, "echeance": "2029-10-10"}
+    assert client.post("/api/objectif/nouveau", json=projet).status_code == 400  # pas encore atteint
+
+    client.post("/api/epargner", json={"montant": 1700})  # 1 850 € sur 1 800 €
+    donnees = client.get("/api/etat").json()
+    assert donnees["objectif_atteint"] and float(donnees["surplus"]) == 50
+
+    objectif = client.post("/api/objectif/nouveau", json=projet).json()
+    assert (objectif["nom"], objectif["deja_epargne"]) == ("Première voiture", "50")
+    assert client.get("/api/etat").json()["objectif_atteint"] is False
+
+
 # --- Mon contrat : blocage strict ---
 
 def test_activer_le_blocage_strict_puis_payer():
