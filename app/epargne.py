@@ -70,6 +70,12 @@ def plan_conseille(objectif: Objectif, aujourd_hui: date) -> PlanEpargne:
 
     if reste == 0:
         message = f"Bravo, ton objectif « {objectif.nom} » est atteint !"
+    elif objectif.echeance < aujourd_hui:
+        message = (
+            f"L'échéance de ton objectif « {objectif.nom} » est passée. "
+            f"Tu as déjà épargné {format_euros(objectif.deja_epargne)} : choisis une nouvelle date "
+            f"ou ajuste ton objectif."
+        )
     else:
         message = (
             f"Pour « {objectif.nom} », on te suggère un {produit.value} : {pourquoi}. "
@@ -214,8 +220,29 @@ def surplus(objectif: Objectif) -> Decimal:
     return max(objectif.deja_epargne - objectif.montant, Decimal("0"))
 
 
-def nouvel_objectif(ancien: Objectif, nom: str, montant: Decimal, echeance: date) -> Objectif:
+def echeance_depassee(objectif: Objectif, aujourd_hui: date) -> bool:
+    """La date est passée alors que l'objectif n'est pas atteint : on propose de l'ajuster."""
+    return not objectif_atteint(objectif) and objectif.echeance < aujourd_hui
+
+
+def verifier_echeance(echeance: date, aujourd_hui: date) -> None:
+    if echeance <= aujourd_hui:
+        raise ValueError("Choisis une échéance dans le futur.")
+
+
+def modifier_objectif(
+    ancien: Objectif, nom: str, montant: Decimal, echeance: date, aujourd_hui: date
+) -> Objectif:
+    """Change le nom, le montant ou la date de l'objectif. Ce qui est déjà épargné est gardé."""
+    verifier_echeance(echeance, aujourd_hui)
+    return Objectif(nom=nom, montant=montant, echeance=echeance, deja_epargne=ancien.deja_epargne)
+
+
+def nouvel_objectif(
+    ancien: Objectif, nom: str, montant: Decimal, echeance: date, aujourd_hui: date
+) -> Objectif:
     """Objectif atteint : on démarre le projet suivant, en reportant ce qui dépasse l'ancien objectif."""
     if not objectif_atteint(ancien):
         raise ValueError(f"Ton objectif « {ancien.nom} » n'est pas encore atteint.")
+    verifier_echeance(echeance, aujourd_hui)
     return Objectif(nom=nom, montant=montant, echeance=echeance, deja_epargne=surplus(ancien))

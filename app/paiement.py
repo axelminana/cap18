@@ -19,8 +19,9 @@ from app.epargne import (
     PropositionEpargne,
     budget_restant,
     epargner,
-    nouvel_objectif,
     historique,
+    modifier_objectif,
+    nouvel_objectif,
     proposition_apres_renoncement,
 )
 from app.models import Categorie, Donnees, Profil, Transaction
@@ -182,11 +183,20 @@ def epargner_bilan(
     return nouveau.model_copy(update={"bilans_traites": compte.bilans_traites + [(annee, mois)]})
 
 
-def demarrer_nouvel_objectif(compte: Compte, nom: str, montant: Decimal, echeance: date) -> Compte:
+def demarrer_nouvel_objectif(
+    compte: Compte, nom: str, montant: Decimal, echeance: date, aujourd_hui: date
+) -> Compte:
     """Remplace l'objectif atteint par un nouveau projet (le surplus éventuel est reporté)."""
     ancien = compte.profil.objectif
-    profil = compte.profil.model_copy(update={"objectif": nouvel_objectif(ancien, nom, montant, echeance)})
+    nouveau = nouvel_objectif(ancien, nom, montant, echeance, aujourd_hui)
+    profil = compte.profil.model_copy(update={"objectif": nouveau})
     return compte.model_copy(update={
         "profil": profil,
         "objectifs_atteints": compte.objectifs_atteints + [ancien.nom],
     })
+
+
+def ajuster_objectif(compte: Compte, nom: str, montant: Decimal, echeance: date, aujourd_hui: date) -> Compte:
+    """Échéance dépassée (ou simple changement d'avis) : nouvelle date, nouveau montant ou nouveau nom."""
+    objectif = modifier_objectif(compte.profil.objectif, nom, montant, echeance, aujourd_hui)
+    return compte.model_copy(update={"profil": compte.profil.model_copy(update={"objectif": objectif})})

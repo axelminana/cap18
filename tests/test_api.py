@@ -108,6 +108,21 @@ def test_nouveau_projet_par_l_api():
     assert client.get("/api/etat").json()["objectif_atteint"] is False
 
 
+def test_echeance_depassee_par_l_api():
+    profil = client.get("/api/etat").json()["profil"]
+    profil["objectif"]["echeance"] = "2026-10-01"  # date déjà passée au 10 octobre
+    client.put("/api/profil", json=profil)
+    assert client.get("/api/etat").json()["echeance_depassee"] is True
+
+    nouveau = {"nom": "Permis de conduire", "montant": 1800, "echeance": "2026-09-01"}
+    assert client.post("/api/objectif/modifier", json=nouveau).status_code == 400  # encore dans le passé
+
+    nouveau["echeance"] = "2027-12-10"
+    objectif = client.post("/api/objectif/modifier", json=nouveau).json()
+    assert (objectif["echeance"], objectif["deja_epargne"]) == ("2027-12-10", "150")
+    assert client.get("/api/etat").json()["echeance_depassee"] is False
+
+
 # --- Mon contrat : blocage strict ---
 
 def test_activer_le_blocage_strict_puis_payer():

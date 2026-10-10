@@ -18,6 +18,7 @@ from pydantic import BaseModel, Field
 from app.epargne import (
     bilan_mensuel,
     budget_restant,
+    echeance_depassee,
     historique,
     objectif_atteint,
     plan_conseille,
@@ -28,6 +29,7 @@ from app.horloge import Horloge
 from app.models import DELAIS_CONSEILLES, LIBELLES_CATEGORIES, Canal, Profil, Transaction, charger_donnees
 from app.paiement import (
     bilan_a_epargner,
+    ajuster_objectif,
     compte_initial,
     demarrer_nouvel_objectif,
     epargner_bilan,
@@ -83,7 +85,7 @@ class DemandeEpargneBilan(BaseModel):
     montant: Decimal = Field(ge=0)   # 0 = « ne rien épargner ce mois-ci »
 
 
-class DemandeNouvelObjectif(BaseModel):
+class DemandeObjectif(BaseModel):
     nom: str = Field(min_length=1)
     montant: Decimal = Field(gt=0)
     echeance: date
@@ -114,6 +116,7 @@ def lire_etat():
         "progression": progression(compte.profil.objectif),
         "objectif_atteint": objectif_atteint(compte.profil.objectif),
         "surplus": surplus(compte.profil.objectif),
+        "echeance_depassee": echeance_depassee(compte.profil.objectif, maintenant.date()),
         "budget_restant": budget_restant(compte.profil, compte.transactions, maintenant.date()),
         "suspendus": suspendus,
         "libelles_categories": LIBELLES_CATEGORIES,
@@ -154,10 +157,24 @@ def modifier_profil(profil: Profil):
 
 
 @app.post("/api/objectif/nouveau")
-def nouveau_projet(demande: DemandeNouvelObjectif):
+def nouveau_projet(demande: DemandeObjectif):
     """Objectif atteint : démarrer le projet suivant (le surplus déjà épargné est reporté)."""
     try:
-        etat.compte = demarrer_nouvel_objectif(etat.compte, demande.nom, demande.montant, demande.echeance)
+        etat.compte = demarrer_nouvel_objectif(
+            etat.compte, demande.nom, demande.montant, demande.echeance, etat.horloge.maintenant().date()
+        )
+    except ValueError as erreur:
+        raise HTTPException(status_code=400, detail=str(erreur))
+    return etat.compte.profil.objectif
+
+
+@app.post("/api/objectif/modifier")
+def modifier_objectif(demande: DemandeObjectif):
+    """Échéance dépassée : changer la date, le montant ou le nom (ce qui est épargné est gardé)."""
+    try:
+        etat.compte = ajuster_objectif(
+            etat.compte, demande.nom, demande.montant, demande.echeance, etat.horloge.maintenant().date()
+        )
     except ValueError as erreur:
         raise HTTPException(status_code=400, detail=str(erreur))
     return etat.compte.profil.objectif

@@ -24,6 +24,7 @@ async function rafraichir() {
   afficherBilanPret();
   afficherObjectif();
   afficherNouveauProjet();
+  afficherEcheanceDepassee();
   afficherBudget();
   afficherHistorique();
   afficherScore();
@@ -174,6 +175,42 @@ async function demarrerProjet(formulaire) {
     rafraichir();
   } catch (erreur) {
     document.getElementById("projet-message").textContent = erreur.message;
+  }
+}
+
+function afficherEcheanceDepassee() {
+  const zone = document.getElementById("echeance-depassee");
+  if (!etat.echeance_depassee) {
+    zone.innerHTML = "";
+    return;
+  }
+  if (zone.innerHTML !== "") return; // déjà affiché : on n'efface pas ce que Léa est en train de taper
+  const objectif = etat.profil.objectif;
+  zone.innerHTML = `
+    <article class="carte notification">
+      <h2>⏰ La date de ton objectif est passée</h2>
+      <p>Tu as déjà épargné <strong>${euros(objectif.deja_epargne)}</strong> sur ${euros(objectif.montant)} :
+         c'est un bon début ! Choisis une nouvelle date, ou ajuste ton objectif.</p>
+      <form id="formulaire-echeance">
+        <label>Nom <input type="text" name="nom" required value="${echapper(objectif.nom)}"></label>
+        <label>Montant (€) <input type="number" name="montant" min="1" step="1" required value="${objectif.montant}"></label>
+        <label>Nouvelle échéance <input type="date" name="echeance" required></label>
+        <button type="submit" class="bouton-principal">Mettre à jour mon objectif</button>
+      </form>
+      <p id="echeance-message" class="message-formulaire erreur"></p>
+    </article>`;
+}
+
+async function ajusterObjectif(formulaire) {
+  const valeur = (nom) => formulaire.elements[nom].value;
+  try {
+    await api("objectif/modifier", "POST", {
+      nom: valeur("nom"), montant: valeur("montant"), echeance: valeur("echeance"),
+    });
+    document.getElementById("echeance-depassee").innerHTML = "";
+    rafraichir();
+  } catch (erreur) {
+    document.getElementById("echeance-message").textContent = erreur.message;
   }
 }
 
@@ -347,7 +384,7 @@ function ouvrirOnglet(nom) {
 
 document.body.addEventListener("click", async (evenement) => {
   const bouton = evenement.target.closest("button");
-  // Les boutons des formulaires (« Mon contrat », nouveau projet) sont gérés par « submit » plus bas.
+  // Les boutons des formulaires (« Mon contrat », nouveau projet, échéance) sont gérés par « submit » plus bas.
   if (!bouton || bouton.closest("form")) return;
   const d = bouton.dataset;
   try {
@@ -385,6 +422,7 @@ document.body.addEventListener("submit", (evenement) => {
   evenement.preventDefault(); // pas de rechargement de page
   if (evenement.target.id === "formulaire-contrat") enregistrerContrat(evenement.target);
   if (evenement.target.id === "formulaire-projet") demarrerProjet(evenement.target);
+  if (evenement.target.id === "formulaire-echeance") ajusterObjectif(evenement.target);
 });
 
 // On peut ouvrir directement un onglet par l'adresse, ex. banque.html#score

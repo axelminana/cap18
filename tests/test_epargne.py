@@ -13,8 +13,10 @@ import pytest
 from app.epargne import (
     Produit,
     budget_restant,
+    echeance_depassee,
     epargner,
     historique,
+    modifier_objectif,
     mois_entre,
     nouvel_objectif,
     objectif_atteint,
@@ -212,11 +214,40 @@ def test_objectif_atteint_et_surplus():
 
 def test_nouveau_projet_reporte_le_surplus():
     depasse = epargner(PERMIS, Decimal("1700"))
-    voiture = nouvel_objectif(depasse, "Première voiture", Decimal("3000"), date(2029, 10, 10))
+    voiture = nouvel_objectif(depasse, "Première voiture", Decimal("3000"), date(2029, 10, 10), AUJOURD_HUI)
     assert (voiture.nom, voiture.montant, voiture.deja_epargne) == ("Première voiture", Decimal("3000"), Decimal("50"))
     assert progression(voiture) == 1
 
 
 def test_nouveau_projet_refuse_si_objectif_pas_atteint():
     with pytest.raises(ValueError):
-        nouvel_objectif(PERMIS, "Voiture", Decimal("3000"), date(2029, 10, 10))
+        nouvel_objectif(PERMIS, "Voiture", Decimal("3000"), date(2029, 10, 10), AUJOURD_HUI)
+
+
+# --- Échéance dépassée : ajuster l'objectif ---
+
+LENDEMAIN_DE_L_ECHEANCE = date(2027, 10, 11)
+
+
+def test_echeance_depassee_detectee():
+    assert not echeance_depassee(PERMIS, date(2027, 10, 10))  # le jour même : pas encore dépassée
+    assert echeance_depassee(PERMIS, LENDEMAIN_DE_L_ECHEANCE)
+    atteint = epargner(PERMIS, Decimal("1650"))
+    assert not echeance_depassee(atteint, LENDEMAIN_DE_L_ECHEANCE)  # objectif atteint : rien à ajuster
+
+
+def test_le_plan_previent_que_l_echeance_est_passee():
+    plan = plan_conseille(PERMIS, LENDEMAIN_DE_L_ECHEANCE)
+    assert "est passée" in plan.message and "150 €" in plan.message
+
+
+def test_modifier_l_objectif_garde_l_epargne():
+    nouveau = modifier_objectif(PERMIS, "Permis de conduire", Decimal("1500"), date(2028, 4, 10), LENDEMAIN_DE_L_ECHEANCE)
+    assert (nouveau.montant, nouveau.echeance, nouveau.deja_epargne) == (Decimal("1500"), date(2028, 4, 10), Decimal("150"))
+    assert not echeance_depassee(nouveau, LENDEMAIN_DE_L_ECHEANCE)
+
+
+@pytest.mark.parametrize("echeance", [date(2027, 10, 11), date(2027, 1, 1)])
+def test_nouvelle_echeance_dans_le_passe_ou_aujourd_hui_refusee(echeance):
+    with pytest.raises(ValueError):
+        modifier_objectif(PERMIS, "Permis", Decimal("1800"), echeance, LENDEMAIN_DE_L_ECHEANCE)

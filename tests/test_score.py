@@ -116,7 +116,7 @@ def test_badges_de_progression_de_l_objectif(compte):
 
 def test_les_badges_d_objectif_restent_acquis_avec_un_nouveau_projet(compte):
     compte = verser_epargne(compte, Decimal("1650"), UNE_HEURE)  # 1 800 / 1 800 €
-    compte = demarrer_nouvel_objectif(compte, "Voiture", Decimal("3000"), date(2029, 10, 10))
+    compte = demarrer_nouvel_objectif(compte, "Voiture", Decimal("3000"), date(2029, 10, 10), AUJOURD_HUI)
     score, badges = calculer_score(compte, AUJOURD_HUI)
     assert score.progression == 0 and score.objectifs_atteints == 1
     assert {"objectif_25", "objectif_50"} <= obtenus(badges)

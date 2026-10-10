@@ -32,7 +32,7 @@ Documents complémentaires :
 python -m venv .venv
 .venv\Scripts\Activate.ps1
 pip install -r requirements.txt
-pytest                              # 143 tests
+pytest                              # 149 tests
 uvicorn app.main:app --reload       # puis ouvrir http://127.0.0.1:8000
 ```
 
@@ -74,6 +74,7 @@ La page de démo affiche **la boutique fictive à gauche** et **le téléphone d
 | Plan d'épargne | Objectif à **moins de 5 ans → Livret A**, **5 ans ou plus → PEA** (capital non garanti). Versement mensuel = reste à épargner / mois restants, arrondi à l'euro supérieur. Toujours présenté comme une **suggestion**. |
 | Bilan du mois | Économies = budget en ligne − achats en ligne du mois (0 si dépassé). Proposé à chaque fin de mois, une seule fois, même pour un mois sans achat. L'utilisateur choisit d'épargner tout, une partie ou rien. |
 | Objectif atteint | L'utilisateur démarre un nouveau projet ; ce qu'il a épargné en plus est reporté dessus. |
+| Échéance dépassée | Sans reproche, l'appli propose de choisir une nouvelle date ou d'ajuster l'objectif ; ce qui est épargné est gardé. |
 | Tableau de score | **Strictement personnel**, uniquement des encouragements : séries de mois réussis, achats évités, total épargné, meilleur mois, badges. |
 
 ---
@@ -211,6 +212,7 @@ Ces fonctions ne modifient jamais la liste reçue : elles en renvoient une nouve
 - **`epargner()`** renvoie un nouvel objectif. Un montant négatif est refusé.
 - **`progression()`** : pourcentage atteint, plafonné à 100 %.
 - **`objectif_atteint()`**, **`surplus()`** et **`nouvel_objectif()`** : quand l'objectif est atteint, on démarre le projet suivant en reportant le surplus (1 850 € pour 1 800 € → 50 € reportés).
+- **`echeance_depassee()`** et **`modifier_objectif()`** : si la date est passée sans que l'objectif soit atteint, le plan le dit clairement et Léa peut changer la date, le montant ou le nom, en gardant son épargne. Une échéance doit toujours être dans le futur.
 
 ### `app/paiement.py` : l'orchestration du parcours
 **`Compte`** regroupe tout l'état de Léa :
@@ -262,6 +264,7 @@ Il n'y a aucune comparaison avec d'autres utilisateurs et aucun badge négatif.
 | `POST /api/epargner` | Verser vers l'objectif |
 | `POST /api/bilan/epargner` | Épargner tout, une partie ou rien du bilan du mois terminé |
 | `POST /api/objectif/nouveau` | Démarrer un nouveau projet quand l'objectif est atteint |
+| `POST /api/objectif/modifier` | Ajuster l'objectif quand l'échéance est dépassée |
 | `GET /api/bilan` | Bilan et historique |
 | `GET /api/score` | Tableau de score |
 | `PUT /api/profil` | Modifier le contrat |
@@ -306,7 +309,7 @@ HTML, CSS et JavaScript **sans framework**. Le JavaScript **ne fait aucun calcul
 
 ## 6. Les tests
 
-**143 tests pytest**, sur les données réelles de Léa et des cas concrets. On les lance avec `pytest`.
+**149 tests pytest**, sur les données réelles de Léa et des cas concrets. On les lance avec `pytest`.
 
 | Fichier | Tests | Ce qui est vérifié |
 |---|---|---|
@@ -314,10 +317,10 @@ HTML, CSS et JavaScript **sans framework**. Le JavaScript **ne fait aucun calcul
 | `test_horloge.py` | 10 | +30 min, passage de minuit, décembre → janvier, le temps ne recule pas |
 | `test_regles.py` | 23 | Cas de référence (voir ci-dessous) |
 | `test_suspension.py` | 13 | Les 5 règles de mémorisation, avec les cas limites (pile au déblocage, 23 h 59, 24 h pile) |
-| `test_epargne.py` | 36 | Plan Livret A / PEA, seuil des 5 ans, échéance dépassée, somme conseillée, positions du curseur, bilans (dont un mois sans achat), nouveau projet |
+| `test_epargne.py` | 41 | Plan Livret A / PEA, seuil des 5 ans, échéance dépassée, somme conseillée, positions du curseur, bilans (dont un mois sans achat), nouveau projet, échéance dépassée |
 | `test_paiement.py` | 13 | Variantes A et B, blocage strict, **démo complète avec l'horloge simulée**, bilan proposé à chaque fin de mois |
 | `test_score.py` | 12 | Séries, score de départ, progression après renoncement, badges (conservés avec un nouveau projet) |
-| `test_api.py` | 22 | Les variantes A et B par requêtes HTTP, bilan et nouveau projet, erreurs 404 / 400 / 422, pages servies |
+| `test_api.py` | 23 | Les variantes A et B par requêtes HTTP, bilan, nouveau projet, échéance dépassée, erreurs 404 / 400 / 422, pages servies |
 
 **Les cas de référence demandés dans le cahier des charges :**
 
