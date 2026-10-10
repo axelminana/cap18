@@ -2,7 +2,7 @@
 
 Document de référence pour le jury technique. Mis à jour à chaque étape du développement.
 
-**Dernière mise à jour :** samedi 10 octobre 2026 — corrections après la répétition de la démo (voir §4).
+**Dernière mise à jour :** samedi 10 octobre 2026 — corrections après la répétition de la démo, règle des 3 % et questionnaire de réflexion (voir §4).
 
 ## 1. Vue d'ensemble
 
@@ -16,7 +16,9 @@ Document de référence pour le jury technique. Mis à jour à chaque étape du 
 │ (appli mobile Léa)   │   JSON    │ paiement.py (orchestration)          │
 └──────────────────────┘           │    ├── regles.py     (pause, raisons)│
   Aucune logique métier            │    ├── suspension.py (achats mémo.)  │
-  côté navigateur                  │    └── epargne.py    (plan, bilan)   │
+  côté navigateur                  │    ├── questionnaire.py (questions)  │
+                                   │    ├── epargne.py    (plan, bilan)   │
+                                   │    └── score.py      (US4)           │
                                    │ horloge.py (temps simulable)         │
                                    │ models.py  (modèles Pydantic)        │
                                    │    ▲                                 │

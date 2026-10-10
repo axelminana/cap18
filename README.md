@@ -93,8 +93,9 @@ La page de démo affiche **la boutique fictive à gauche** et **le téléphone d
 │ banque.html          │ ◄───────  │ paiement.py (orchestration)          │
 │ (appli mobile Léa)   │   JSON    │    ├── regles.py     (pause, raisons)│
 └──────────────────────┘           │    ├── suspension.py (achats mémo.)  │
-  Aucune logique métier            │    ├── epargne.py    (plan, bilan)   │
-  côté navigateur                  │    └── score.py      (US4)           │
+  Aucune logique métier            │    ├── questionnaire.py (questions)  │
+  côté navigateur                  │    ├── epargne.py    (plan, bilan)   │
+                                   │    └── score.py      (US4)           │
                                    │ horloge.py (temps simulable)         │
                                    │ models.py  (modèles Pydantic)        │
                                    │ data/*.json (données fictives)       │
