@@ -8,13 +8,20 @@ résultat. Le Compte d'origine n'est jamais modifié. Seule l'API garde le Compt
 """
 
 import math
-from datetime import datetime
+from datetime import date, datetime
 from decimal import Decimal
 from enum import Enum
 
 from pydantic import BaseModel
 
-from app.epargne import PropositionEpargne, budget_restant, epargner, proposition_apres_renoncement
+from app.epargne import (
+    BilanMensuel,
+    PropositionEpargne,
+    budget_restant,
+    epargner,
+    historique,
+    proposition_apres_renoncement,
+)
 from app.models import Categorie, Donnees, Profil, Transaction
 from app.regles import RegleDeclenchee, Statut, evaluer_achat
 from app.suspension import AchatSuspendu, EtatTentative, memoriser, retirer, verifier_tentative
@@ -44,6 +51,7 @@ class Compte(BaseModel):
     suspendus: list[AchatSuspendu] = []
     achats_evites: list[AchatEvite] = []
     versements: list[Versement] = []
+    bilans_traites: list[tuple[int, int]] = []  # (année, mois) déjà épargnés ou ignorés
 
 
 def compte_initial(donnees: Donnees) -> Compte:
@@ -146,3 +154,27 @@ def verser_epargne(compte: Compte, montant: Decimal, maintenant: datetime) -> Co
     if montant > 0:  # « ne rien épargner » n'est pas un versement
         versements = versements + [Versement(montant=montant, date=maintenant)]
     return compte.model_copy(update={"profil": profil, "versements": versements})
+
+
+def bilan_a_epargner(compte: Compte, aujourd_hui: date) -> BilanMensuel | None:
+    """Le bilan du dernier mois terminé, s'il a des économies et n'a pas encore été traité."""
+    bilans = historique(compte.profil, compte.transactions, aujourd_hui)
+    if not bilans:
+        return None
+    dernier = bilans[-1]
+    if dernier.economies <= 0 or (dernier.annee, dernier.mois) in compte.bilans_traites:
+        return None
+    return dernier
+
+
+def epargner_bilan(
+    compte: Compte, annee: int, mois: int, montant: Decimal, maintenant: datetime
+) -> Compte:
+    """Léa choisit d'épargner tout, une partie ou rien (0) des économies du mois terminé."""
+    bilan = bilan_a_epargner(compte, maintenant.date())
+    if bilan is None or (bilan.annee, bilan.mois) != (annee, mois):
+        raise ValueError("Ce bilan n'est pas à épargner (mois en cours, déjà traité ou sans économies).")
+    if montant > bilan.economies:
+        raise ValueError(f"Tu ne peux pas épargner plus que tes économies du mois ({bilan.economies} €).")
+    nouveau = verser_epargne(compte, montant, maintenant)
+    return nouveau.model_copy(update={"bilans_traites": compte.bilans_traites + [(annee, mois)]})

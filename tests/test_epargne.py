@@ -121,6 +121,20 @@ def test_historique_contient_seulement_les_mois_termines():
     assert [(b.annee, b.mois) for b in bilans] == [(2026, 8), (2026, 9)]
 
 
+def test_un_mois_sans_achat_en_ligne_apparait_dans_l_historique():
+    # Au 1er décembre, novembre n'a aucune transaction : il compte quand même, tout est économisé.
+    bilans = historique(LEA, DONNEES.transactions, date(2026, 12, 1))
+    assert [(b.annee, b.mois) for b in bilans] == [(2026, 8), (2026, 9), (2026, 10), (2026, 11)]
+    novembre = bilans[-1]
+    assert novembre.depenses_en_ligne == 0
+    assert novembre.economies == Decimal("120")
+    assert novembre.budget_respecte
+
+
+def test_historique_vide_sans_transaction():
+    assert historique(LEA, [], AUJOURD_HUI) == []
+
+
 def test_bilan_d_aout_mois_reussi():
     aout = historique(LEA, DONNEES.transactions, AUJOURD_HUI)[0]
     # Loyer, factures et courses en magasin ne comptent pas.

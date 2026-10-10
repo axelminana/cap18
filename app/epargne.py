@@ -146,13 +146,25 @@ def bilan_mensuel(profil: Profil, transactions: list[Transaction], annee: int, m
     )
 
 
+def mois_suivant(annee: int, mois: int) -> tuple[int, int]:
+    return (annee + 1, 1) if mois == 12 else (annee, mois + 1)
+
+
 def historique(profil: Profil, transactions: list[Transaction], aujourd_hui: date) -> list[BilanMensuel]:
-    """Bilans des mois terminés (strictement avant le mois en cours), du plus ancien au plus récent."""
-    mois_termines = sorted({
-        (t.date_heure.year, t.date_heure.month) for t in transactions
-        if (t.date_heure.year, t.date_heure.month) < (aujourd_hui.year, aujourd_hui.month)
-    })
-    return [bilan_mensuel(profil, transactions, annee, mois) for annee, mois in mois_termines]
+    """Bilans des mois terminés (strictement avant le mois en cours), du plus ancien au plus récent.
+
+    Tous les mois sont présents depuis la première transaction, même un mois sans aucun
+    achat en ligne (c'est alors un mois réussi : tout le budget est économisé).
+    """
+    if not transactions:
+        return []
+    premiere = min(t.date_heure for t in transactions)
+    courant = (premiere.year, premiere.month)
+    bilans = []
+    while courant < (aujourd_hui.year, aujourd_hui.month):
+        bilans.append(bilan_mensuel(profil, transactions, *courant))
+        courant = mois_suivant(*courant)
+    return bilans
 
 
 # --- Verser vers l'objectif et suivre la progression ---

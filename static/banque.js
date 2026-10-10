@@ -5,7 +5,6 @@ let etat = null;             // dernière réponse de /api/etat
 let bilan = null;            // dernière réponse de /api/bilan
 let score = null;            // dernière réponse de /api/score
 let dernierAffichage = "";   // pour ne redessiner que si quelque chose a changé
-const moisTraites = new Set(); // bilans de fin de mois déjà épargnés ou ignorés
 
 // --- Rafraîchissement ---
 
@@ -15,7 +14,7 @@ async function rafraichir() {
   } catch (erreur) {
     return; // serveur momentanément injoignable : on réessaie à la seconde suivante
   }
-  const empreinte = JSON.stringify([etat, bilan, score, [...moisTraites]]);
+  const empreinte = JSON.stringify([etat, bilan, score]);
   if (empreinte === dernierAffichage) return;
   dernierAffichage = empreinte;
 
@@ -62,8 +61,11 @@ async function renoncerA(achat) {
   rafraichir();
 }
 
-async function epargner(montant, zone) {
-  const reponse = await api("epargner", "POST", { montant: montant });
+async function epargner(montant, zone, mois = null) {
+  // Bilan de fin de mois : le serveur vérifie le mois et le montant, puis le marque comme traité.
+  const reponse = mois
+    ? await api("bilan/epargner", "POST", { annee: mois.annee, mois: mois.mois, montant: montant })
+    : await api("epargner", "POST", { montant: montant });
   document.getElementById(zone).innerHTML = `
     <article class="carte felicitations">
       <h2>💰 C'est mis de côté</h2>
@@ -76,15 +78,10 @@ async function epargner(montant, zone) {
 
 // --- Accueil : bilan de fin de mois prêt ---
 
-function dernierMoisTermine() {
-  return bilan.historique.length ? bilan.historique[bilan.historique.length - 1] : null;
-}
-
 function afficherBilanPret() {
   const zone = document.getElementById("bilan-pret");
-  const mois = dernierMoisTermine();
-  const cle = mois ? `${mois.annee}-${mois.mois}` : null;
-  if (!mois || Number(mois.economies) <= 0 || moisTraites.has(cle)) {
+  const mois = bilan.a_epargner; // choisi par le serveur : dernier mois terminé, non traité, avec économies
+  if (!mois) {
     if (!zone.querySelector(".felicitations")) zone.innerHTML = "";
     return;
   }
@@ -94,15 +91,15 @@ function afficherBilanPret() {
       <p>Tu as dépensé ${euros(mois.depenses_en_ligne)} en ligne sur un budget de ${euros(mois.budget)} :
          tu as économisé <strong>${euros(mois.economies)}</strong>. Que veux-tu en faire ?</p>
       <div class="boutons">
-        <button class="bouton-principal" data-epargner-bilan="${mois.economies}" data-mois="${cle}">
+        <button class="bouton-principal" data-epargner-bilan="${mois.economies}">
           Tout épargner (${euros(mois.economies)})</button>
       </div>
       <div class="partie">
         <input type="number" id="montant-partie" min="0" max="${mois.economies}" step="0.01"
                placeholder="Montant" aria-label="Montant à épargner">
-        <button class="bouton-secondaire" data-epargner-partie data-mois="${cle}">Épargner une partie</button>
+        <button class="bouton-secondaire" data-epargner-partie>Épargner une partie</button>
       </div>
-      <button class="lien" data-rien data-mois="${cle}">Ne rien épargner ce mois-ci</button>
+      <button class="lien" data-rien>Ne rien épargner ce mois-ci</button>
     </article>`;
 }
 
@@ -300,14 +297,18 @@ document.body.addEventListener("click", async (evenement) => {
     else if (d.epargner !== undefined) await epargner(d.epargner, "felicitations");
     else if (d.fermerFelicitations !== undefined) document.getElementById("felicitations").innerHTML = "";
     else if (d.fermerZone !== undefined) document.getElementById(d.fermerZone).innerHTML = "";
-    else if (d.epargnerBilan !== undefined) { moisTraites.add(d.mois); await epargner(d.epargnerBilan, "bilan-pret"); }
+    else if (d.epargnerBilan !== undefined) await epargner(d.epargnerBilan, "bilan-pret", bilan.a_epargner);
     else if (d.epargnerPartie !== undefined) {
       const montant = document.getElementById("montant-partie").value;
-      if (montant === "" || Number(montant) < 0) return;
-      moisTraites.add(d.mois);
-      await epargner(montant, "bilan-pret");
+      if (montant === "") return;
+      await epargner(montant, "bilan-pret", bilan.a_epargner);
     }
-    else if (d.rien !== undefined) { moisTraites.add(d.mois); document.getElementById("bilan-pret").innerHTML = ""; rafraichir(); }
+    else if (d.rien !== undefined) {
+      const mois = bilan.a_epargner;
+      await api("bilan/epargner", "POST", { annee: mois.annee, mois: mois.mois, montant: 0 });
+      document.getElementById("bilan-pret").innerHTML = "";
+      rafraichir();
+    }
   } catch (erreur) {
     alert(erreur.message);
   }

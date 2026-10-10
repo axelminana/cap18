@@ -12,7 +12,15 @@ import pytest
 from app.epargne import historique, progression
 from app.horloge import Horloge
 from app.models import Transaction, charger_donnees
-from app.paiement import StatutPaiement, compte_initial, payer, renoncer, verser_epargne
+from app.paiement import (
+    StatutPaiement,
+    bilan_a_epargner,
+    compte_initial,
+    epargner_bilan,
+    payer,
+    renoncer,
+    verser_epargne,
+)
 
 UNE_HEURE_DU_MATIN = datetime(2026, 10, 10, 1, 0)
 
@@ -150,3 +158,39 @@ def test_demo_complete_avec_horloge(compte):
 
     compte = verser_epargne(compte, octobre.economies, horloge.maintenant())
     assert compte.profil.objectif.deja_epargne == Decimal("155.21")
+
+
+# --- Bilan de fin de mois : proposé chaque mois, une seule fois ---
+
+def test_bilan_propose_a_chaque_fin_de_mois(compte):
+    horloge = Horloge(UNE_HEURE_DU_MATIN)
+    # Au début de la démo, le dernier mois terminé (septembre) est dépassé : rien à épargner.
+    assert bilan_a_epargner(compte, horloge.maintenant().date()) is None
+
+    horloge.aller_au_mois_suivant()  # 1er novembre : bilan d'octobre
+    octobre = bilan_a_epargner(compte, horloge.maintenant().date())
+    assert (octobre.mois, octobre.economies) == (10, Decimal("94.21"))
+    compte = epargner_bilan(compte, 2026, 10, Decimal("94.21"), horloge.maintenant())
+    assert bilan_a_epargner(compte, horloge.maintenant().date()) is None  # déjà traité
+
+    horloge.aller_au_mois_suivant()  # 1er décembre : bilan de novembre, mois sans achat
+    novembre = bilan_a_epargner(compte, horloge.maintenant().date())
+    assert (novembre.mois, novembre.economies) == (11, Decimal("120"))
+
+
+def test_ne_rien_epargner_traite_aussi_le_mois(compte):
+    horloge = Horloge(UNE_HEURE_DU_MATIN)
+    horloge.aller_au_mois_suivant()
+    compte = epargner_bilan(compte, 2026, 10, Decimal("0"), horloge.maintenant())
+    assert compte.profil.objectif.deja_epargne == Decimal("150")
+    assert bilan_a_epargner(compte, horloge.maintenant().date()) is None
+
+
+def test_epargner_un_bilan_deja_traite_ou_trop_eleve_refuse(compte):
+    horloge = Horloge(UNE_HEURE_DU_MATIN)
+    horloge.aller_au_mois_suivant()
+    with pytest.raises(ValueError):
+        epargner_bilan(compte, 2026, 10, Decimal("200"), horloge.maintenant())  # > 94,21 €
+    compte = epargner_bilan(compte, 2026, 10, Decimal("50"), horloge.maintenant())
+    with pytest.raises(ValueError):
+        epargner_bilan(compte, 2026, 10, Decimal("10"), horloge.maintenant())  # déjà traité

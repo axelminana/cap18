@@ -18,7 +18,7 @@ from pydantic import BaseModel, Field
 from app.epargne import bilan_mensuel, budget_restant, historique, plan_conseille, progression
 from app.horloge import Horloge
 from app.models import DELAIS_CONSEILLES, LIBELLES_CATEGORIES, Canal, Profil, Transaction, charger_donnees
-from app.paiement import compte_initial, payer, renoncer, verser_epargne
+from app.paiement import bilan_a_epargner, compte_initial, epargner_bilan, payer, renoncer, verser_epargne
 from app.score import calculer_score
 from app.suspension import est_expire
 
@@ -59,6 +59,12 @@ class DemandeRenoncement(BaseModel):
 
 class DemandeEpargne(BaseModel):
     montant: Decimal = Field(ge=0)
+
+
+class DemandeEpargneBilan(BaseModel):
+    annee: int
+    mois: int
+    montant: Decimal = Field(ge=0)   # 0 = « ne rien épargner ce mois-ci »
 
 
 class DemandeAvance(BaseModel):
@@ -103,6 +109,7 @@ def lire_bilan():
     return {
         "historique": historique(compte.profil, compte.transactions, aujourd_hui),
         "mois_en_cours": bilan_mensuel(compte.profil, compte.transactions, aujourd_hui.year, aujourd_hui.month),
+        "a_epargner": bilan_a_epargner(compte, aujourd_hui),
     }
 
 
@@ -155,6 +162,19 @@ def renoncer_achat(demande: DemandeRenoncement):
 @app.post("/api/epargner")
 def epargner_montant(demande: DemandeEpargne):
     etat.compte = verser_epargne(etat.compte, demande.montant, etat.horloge.maintenant())
+    objectif = etat.compte.profil.objectif
+    return {"objectif": objectif, "progression": progression(objectif)}
+
+
+@app.post("/api/bilan/epargner")
+def epargner_le_bilan(demande: DemandeEpargneBilan):
+    """Fin de mois : épargner tout, une partie ou rien (montant 0) des économies."""
+    try:
+        etat.compte = epargner_bilan(
+            etat.compte, demande.annee, demande.mois, demande.montant, etat.horloge.maintenant()
+        )
+    except ValueError as erreur:
+        raise HTTPException(status_code=400, detail=str(erreur))
     objectif = etat.compte.profil.objectif
     return {"objectif": objectif, "progression": progression(objectif)}
 

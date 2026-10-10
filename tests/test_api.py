@@ -74,6 +74,22 @@ def test_bilan_apres_passage_au_mois_suivant():
     assert bilan["historique"][-1]["economies"] == "94.21"  # 120 - 25,79
 
 
+def test_bilan_a_epargner_a_chaque_fin_de_mois_par_l_api():
+    assert client.get("/api/bilan").json()["a_epargner"] is None
+
+    client.post("/api/horloge/mois-suivant")
+    a_epargner = client.get("/api/bilan").json()["a_epargner"]
+    assert (a_epargner["mois"], a_epargner["economies"]) == (10, "94.21")
+    reponse = client.post("/api/bilan/epargner", json={"annee": 2026, "mois": 10, "montant": 94.21})
+    assert reponse.json()["objectif"]["deja_epargne"] == "244.21"
+    assert client.get("/api/bilan").json()["a_epargner"] is None
+    # Une 2e fois : refusé
+    assert client.post("/api/bilan/epargner", json={"annee": 2026, "mois": 10, "montant": 1}).status_code == 400
+
+    client.post("/api/horloge/mois-suivant")
+    assert client.get("/api/bilan").json()["a_epargner"]["mois"] == 11
+
+
 # --- Mon contrat : blocage strict ---
 
 def test_activer_le_blocage_strict_puis_payer():
