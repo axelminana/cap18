@@ -25,6 +25,7 @@ from app.epargne import (
     proposition_apres_renoncement,
 )
 from app.models import Categorie, Donnees, Profil, Transaction
+from app.questionnaire import questions_pour
 from app.regles import RegleDeclenchee, Statut, evaluer_achat
 from app.suspension import AchatSuspendu, EtatTentative, memoriser, retirer, verifier_tentative
 
@@ -55,6 +56,7 @@ class Compte(BaseModel):
     versements: list[Versement] = []
     bilans_traites: list[tuple[int, int]] = []  # (année, mois) déjà épargnés ou ignorés
     objectifs_atteints: list[str] = []          # noms des objectifs déjà atteints (pour le score)
+    pauses: int = 0                             # nombre de pauses faites (rotation des questions)
 
 
 def compte_initial(donnees: Donnees) -> Compte:
@@ -116,9 +118,11 @@ def payer(compte: Compte, achat: Transaction) -> tuple[Compte, ResultatPaiement]
         )
 
     # 3. Pause : la banque refuse ce premier essai et mémorise l'achat.
-    suspendus = memoriser(achat, decision.delai_minutes, compte.suspendus, decision.regles)
+    questions = questions_pour(achat, compte.profil, compte.pauses)
+    suspendus = memoriser(achat, decision.delai_minutes, compte.suspendus, decision.regles, questions)
     memorise = suspendus[-1]
-    return compte.model_copy(update={"suspendus": suspendus}), ResultatPaiement(
+    nouveau = compte.model_copy(update={"suspendus": suspendus, "pauses": compte.pauses + 1})
+    return nouveau, ResultatPaiement(
         statut=StatutPaiement.PAUSE,
         message=(
             f"Pause de réflexion de {decision.delai_minutes} min. Après ce délai, "

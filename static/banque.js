@@ -6,6 +6,9 @@ let bilan = null;            // dernière réponse de /api/bilan
 let score = null;            // dernière réponse de /api/score
 let dernierAffichage = "";   // pour ne redessiner que si quelque chose a changé
 let proposition = null;      // dernière réponse de /api/renoncer (sommes du curseur d'épargne)
+// Questionnaire : réponses de Léa, gardées seulement pour l'affichage (jamais envoyées au serveur).
+const reponses = new Map();          // clé de l'achat -> { n° de question: n° du choix }
+const questionnairesPasses = new Set(); // achats dont Léa a cliqué « Passer »
 
 // --- Rafraîchissement ---
 
@@ -43,9 +46,39 @@ function afficherNotifications() {
       ${achat.secondes_restantes > 0
         ? `<p class="compte-a-rebours">Encore <strong>${duree(achat.secondes_restantes)}</strong> avant de pouvoir valider.</p>`
         : `<p class="debloque">Délai terminé. Si tu le veux toujours, relance le paiement sur le site.</p>`}
+      ${afficherQuestionnaire(achat, index)}
       <button class="bouton-principal" data-renoncer="${index}">Je renonce à cet achat</button>
     </article>
   `).join("");
+}
+
+function cleAchat(achat) {
+  return `${achat.commercant}|${achat.montant}|${achat.date_essai}`;
+}
+
+// Questionnaire de réflexion : facultatif, réponses en un clic, « Passer » le ferme.
+function afficherQuestionnaire(achat, index) {
+  const cle = cleAchat(achat);
+  if (!achat.questions.length || questionnairesPasses.has(cle)) return "";
+  const choisis = reponses.get(cle) || {};
+  const questions = achat.questions.map((question, q) => {
+    const choix = choisis[q];
+    return `
+      <div class="question">
+        <p>${echapper(question.texte)}</p>
+        ${choix === undefined
+          ? `<div class="choix">${question.choix.map((c, n) => `
+               <button class="bouton-choix" data-question="${index}-${q}-${n}">${echapper(c.libelle)}</button>`).join("")}
+             </div>`
+          : `<p class="reponse">${echapper(question.choix[choix].reponse)}</p>`}
+      </div>`;
+  }).join("");
+  return `
+    <div class="questionnaire">
+      <p class="questionnaire-titre">🤔 Pour t'aider à décider <small>(facultatif)</small></p>
+      ${questions}
+      <button class="lien" data-passer="${index}">Passer</button>
+    </div>`;
 }
 
 async function renoncerA(achat) {
@@ -328,6 +361,10 @@ function afficherContrat() {
         <input type="checkbox" name="blocage" ${profil.blocage_strict ? "checked" : ""}>
         Blocage strict : refuser un achat qui dépasse une limite (désactivé par défaut)
       </label>
+      <label class="case">
+        <input type="checkbox" name="questionnaire" ${profil.questionnaire ? "checked" : ""}>
+        Questions de réflexion pendant la pause (activées par défaut)
+      </label>
     </article>
     <article class="carte">
       <h2>Mon objectif</h2>
@@ -353,6 +390,7 @@ async function enregistrerContrat(formulaire) {
     if (valeur(`delai-${categorie}`) !== "") profil.delais_minutes[categorie] = Number(valeur(`delai-${categorie}`));
   }
   profil.blocage_strict = formulaire.elements["blocage"].checked;
+  profil.questionnaire = formulaire.elements["questionnaire"].checked;
   profil.objectif = {
     ...profil.objectif,
     nom: valeur("objectif-nom"),
@@ -389,6 +427,16 @@ document.body.addEventListener("click", async (evenement) => {
   const d = bouton.dataset;
   try {
     if (d.onglet) ouvrirOnglet(d.onglet);
+    else if (d.question !== undefined) {
+      const [index, q, n] = d.question.split("-").map(Number);
+      const cle = cleAchat(etat.suspendus[index]);
+      reponses.set(cle, { ...reponses.get(cle), [q]: n });
+      afficherNotifications();
+    }
+    else if (d.passer !== undefined) {
+      questionnairesPasses.add(cleAchat(etat.suspendus[Number(d.passer)]));
+      afficherNotifications();
+    }
     else if (d.renoncer !== undefined) await renoncerA(etat.suspendus[Number(d.renoncer)]);
     else if (d.epargnerCurseur !== undefined) {
       const pourcentage = document.getElementById("curseur-epargne").value;

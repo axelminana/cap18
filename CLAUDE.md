@@ -9,7 +9,7 @@ Ce fichier donne à Claude Code tout le contexte du projet. Lis-le en entier ava
 - **Équipe code :** Axel code, avec l'aide de Claude Code. Le code doit rester compréhensible et explicable par Axel.
 - Fait : concept, pitch d'une minute (voir §9), environnement installé, dépôt Git `cap18`.
 - Samedi 10/10 après-midi : étapes 0 à 9 du plan terminées (voir `ARCHITECTURE.md`) : modèles, horloge, règles, mémorisation, épargne, orchestration, API FastAPI, front (boutique + appli bancaire + barre de démo), tableau de score US4. 125 tests pytest.
-- Samedi soir, corrections après la répétition : bilan proposé à chaque fin de mois (suivi côté serveur), curseur du pourcentage épargné après un renoncement (50 % par défaut), nouveau projet quand l'objectif est atteint (surplus reporté), ajustement de l'objectif quand l'échéance est dépassée. 149 tests pytest.
+- Samedi soir, corrections après la répétition : bilan proposé à chaque fin de mois (suivi côté serveur), curseur du pourcentage épargné après un renoncement (50 % par défaut), nouveau projet quand l'objectif est atteint (surplus reporté), ajustement de l'objectif quand l'échéance est dépassée, règle des 3 % de l'objectif (« part_objectif ») et questionnaire de réflexion (`app/questionnaire.py`). 170 tests pytest.
 - Prochaine étape : Axel lance le serveur et répète la démo ; préparer les supports des jurys (user stories avec tests et maquettes, présentation technique).
 
 ## 1. Contexte de l'événement

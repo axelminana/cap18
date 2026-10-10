@@ -100,6 +100,7 @@ class Profil(BaseModel):
     limites: dict[Categorie, Decimal]
     delais_minutes: dict[Categorie, int]
     blocage_strict: bool = False
+    questionnaire: bool = True   # questions de réflexion pendant la pause
     objectif: Objectif
 
     @model_validator(mode="after")

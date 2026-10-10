@@ -15,6 +15,7 @@ from enum import Enum
 from pydantic import BaseModel
 
 from app.models import Categorie, Transaction
+from app.questionnaire import Question
 from app.regles import RegleDeclenchee
 
 DUREE_VALIDITE = timedelta(hours=24)
@@ -27,6 +28,7 @@ class AchatSuspendu(BaseModel):
     date_essai: datetime
     heure_deblocage: datetime
     regles: list[RegleDeclenchee] = []  # raisons de la pause, affichées dans l'appli
+    questions: list[Question] = []      # questionnaire de réflexion (vide si désactivé ou achat > 3 %)
 
 
 class EtatTentative(str, Enum):
@@ -72,6 +74,7 @@ def memoriser(
     delai_minutes: int,
     suspendus: list[AchatSuspendu],
     regles: list[RegleDeclenchee] | None = None,
+    questions: list[Question] | None = None,
 ) -> list[AchatSuspendu]:
     """Ajoute l'achat à la liste, et en profite pour retirer les achats expirés."""
     nouveau = AchatSuspendu(
@@ -81,6 +84,7 @@ def memoriser(
         date_essai=achat.date_heure,
         heure_deblocage=achat.date_heure + timedelta(minutes=delai_minutes),
         regles=regles or [],
+        questions=questions or [],
     )
     conserves = [
         s for s in suspendus

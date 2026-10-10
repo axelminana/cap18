@@ -26,6 +26,7 @@
     "autres": 15
   },
   "blocage_strict": false,
+  "questionnaire": true,
   "objectif": {
     "nom": "Permis de conduire",
     "montant": 1800,

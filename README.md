@@ -32,7 +32,7 @@ Documents complémentaires :
 python -m venv .venv
 .venv\Scripts\Activate.ps1
 pip install -r requirements.txt
-pytest                              # 156 tests
+pytest                              # 170 tests
 uvicorn app.main:app --reload       # puis ouvrir http://127.0.0.1:8000
 ```
 
@@ -46,7 +46,9 @@ La page de démo affiche **la boutique fictive à gauche** et **le téléphone d
    - Dans la boutique, « Payer 89 € » pour les baskets.
    - Sur le téléphone, une pause de réflexion de 30 min s'affiche, avec ses raisons.
    - « Je renonce » → « Bravo ! … Et si tu mettais 44 € de côté ? ».
+   - Parmi les raisons : « Cet achat représente 4,9 % de ton objectif… ».
    - Le curseur est à 50 % (44 €) ; on peut le déplacer (ex. 75 % → 66 €) → « Épargner 44 € ».
+   - Variante courte : « Payer 12 € » pour la pizza → le questionnaire de réflexion s'affiche dans la pause.
    - L'onglet **Mon score** affiche 1 achat évité et 44 € épargnés.
 2. **« Réinitialiser la démo ».**
 3. **Variante B, Léa attend.**
@@ -67,6 +69,7 @@ La page de démo affiche **la boutique fictive à gauche** et **le téléphone d
 | Périmètre | Uniquement les **paiements en ligne**. Les achats en magasin et les dépenses nécessaires (loyer, factures, courses) ne sont jamais mis en pause. |
 | Pause de réflexion | **Tout achat en ligne non nécessaire** demande une confirmation après le délai de sa catégorie, **quelle que soit l'heure**. |
 | Délais conseillés | Livraison de repas 5 min, vêtements 30 min, électronique 60 min, jeux vidéo 30 min, abonnements 10 min, autres 15 min. Modifiables par l'utilisateur (< 24 h). |
+| Questionnaire de réflexion | Achat de 3 % de l'objectif ou moins : 2 questions facultatives (une commune, une de la catégorie, à tour de rôle), réponses en un clic, « Passer ». Rien n'est enregistré. Activé par défaut, désactivable. |
 | Raisons affichées en plus | Limite de la catégorie dépassée, budget en ligne du mois dépassé, 2e livraison de repas en 7 jours, achat de plus de 3 % de l'objectif (« Cet achat représente 4,9 % de ton objectif… »). |
 | Achat mémorisé | Le 1er essai est refusé et mémorisé. Un nouvel essai **même commerçant, même montant** après le délai passe sans nouvelle pause. Avant le délai, il reste en pause. Expiration au bout de **24 h**. |
 | Blocage strict | **Désactivé par défaut.** S'il est activé, un achat qui dépasse une limite est refusé. La désactivation prend effet immédiatement. |
@@ -240,6 +243,11 @@ Achat déjà mémorisé ? (suspension.py)
 - **`bilan_a_epargner()`** et **`epargner_bilan()`** : le bilan du dernier mois terminé est proposé une seule fois. Le mois traité est enregistré dans le `Compte` (côté serveur), donc recharger la page ne change rien.
 - **`demarrer_nouvel_objectif()`** remplace l'objectif atteint ; les badges d'objectif déjà gagnés restent acquis.
 
+### `app/questionnaire.py` : le questionnaire de réflexion
+- Les questions sont des **données** : chaque `Question` a 2 `Choix`, et chaque choix a son libellé (« Oui », « C'est une envie »…) et sa phrase de réponse, toujours bienveillante (« OK, c'est toi qui décides 👍 »).
+- **`questions_pour(achat, profil, rang)`** renvoie la question commune (« En as-tu vraiment besoin, ou est-ce une envie du moment ? ») et une question de la catégorie, à tour de rôle selon le nombre de pauses déjà faites. Liste vide si le questionnaire est désactivé ou si l'achat dépasse 3 % de l'objectif.
+- **Non intrusif par conception :** 2 questions au maximum, un clic par réponse, « Passer », aucun délai ajouté, aucune réponse envoyée au serveur.
+
 ### `app/score.py` : le tableau de score personnel (US4)
 - **`series()`** parcourt les mois terminés : un mois réussi fait +1, un mois dépassé remet la série à 0. On retient la série en cours et le record.
 - **`calculer_score()`** calcule :
@@ -309,18 +317,19 @@ HTML, CSS et JavaScript **sans framework**. Le JavaScript **ne fait aucun calcul
 
 ## 6. Les tests
 
-**156 tests pytest**, sur les données réelles de Léa et des cas concrets. On les lance avec `pytest`.
+**170 tests pytest**, sur les données réelles de Léa et des cas concrets. On les lance avec `pytest`.
 
 | Fichier | Tests | Ce qui est vérifié |
 |---|---|---|
 | `test_models.py` | 14 | Chargement des JSON, valeurs par défaut, erreurs claires (montant négatif, catégorie inconnue, limite > budget, délai ≥ 24 h…) |
 | `test_horloge.py` | 10 | +30 min, passage de minuit, décembre → janvier, le temps ne recule pas |
-| `test_regles.py` | 30 | Cas de référence (voir ci-dessous) |
+| `test_regles.py` | 30 | Cas de référence (voir ci-dessous), règle des 3 % de l'objectif |
 | `test_suspension.py` | 13 | Les 5 règles de mémorisation, avec les cas limites (pile au déblocage, 23 h 59, 24 h pile) |
 | `test_epargne.py` | 41 | Plan Livret A / PEA, seuil des 5 ans, échéance dépassée, somme conseillée, positions du curseur, bilans (dont un mois sans achat), nouveau projet, échéance dépassée |
 | `test_paiement.py` | 13 | Variantes A et B, blocage strict, **démo complète avec l'horloge simulée**, bilan proposé à chaque fin de mois |
+| `test_questionnaire.py` | 13 | Questions de la pizza, rotation, seuil des 3 %, désactivation, 2 questions à 2 réponses par catégorie, mémorisation dans la pause |
 | `test_score.py` | 12 | Séries, score de départ, progression après renoncement, badges (conservés avec un nouveau projet) |
-| `test_api.py` | 23 | Les variantes A et B par requêtes HTTP, bilan, nouveau projet, échéance dépassée, erreurs 404 / 400 / 422, pages servies |
+| `test_api.py` | 24 | Les variantes A et B par requêtes HTTP, bilan, nouveau projet, échéance dépassée, questionnaire, erreurs 404 / 400 / 422, pages servies |
 
 **Les cas de référence demandés dans le cahier des charges :**
 

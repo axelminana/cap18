@@ -123,6 +123,22 @@ def test_echeance_depassee_par_l_api():
     assert client.get("/api/etat").json()["echeance_depassee"] is False
 
 
+# --- Questionnaire de réflexion ---
+
+def test_questionnaire_dans_l_appli_puis_desactive():
+    pizza = {"commercant": "MiamExpress", "montant": 15.80}
+    client.post("/api/paiement", json=pizza)
+    questions = client.get("/api/etat").json()["suspendus"][0]["questions"]
+    assert len(questions) == 2 and len(questions[0]["choix"]) == 2
+
+    etat.reinitialiser()
+    profil = client.get("/api/etat").json()["profil"]
+    profil["questionnaire"] = False
+    client.put("/api/profil", json=profil)
+    client.post("/api/paiement", json=pizza)
+    assert client.get("/api/etat").json()["suspendus"][0]["questions"] == []
+
+
 # --- Mon contrat : blocage strict ---
 
 def test_activer_le_blocage_strict_puis_payer():
