@@ -48,6 +48,7 @@ Document de référence pour le jury technique. Mis à jour à chaque étape du 
 
 | Chemin | Rôle | État |
 |---|---|---|
+| `README.md` | Présentation du projet, lancement de la démo, explication du code module par module, tests, arguments pour le jury | ✅ fait |
 | `requirements.txt` | Dépendances et versions | ✅ fait |
 | `.gitignore` | Fichiers exclus de Git (venv, caches) | ✅ fait |
 | `pytest.ini` | Configuration de pytest (les tests trouvent le paquet `app`) | ✅ fait |
