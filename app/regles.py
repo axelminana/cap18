@@ -2,19 +2,20 @@
 
 Tout achat en ligne non nécessaire est mis en pause, quelle que soit l'heure :
 il faut le confirmer après le délai de sa catégorie. Le message liste aussi les
-raisons supplémentaires (limite dépassée, budget dépassé, commandes répétées).
+raisons supplémentaires (limite dépassée, budget dépassé, commandes répétées,
+achat qui pèse plus de 3 % de l'objectif d'épargne).
 
 evaluer_achat() est une fonction pure : elle reçoit l'achat tenté, le profil et
 les transactions déjà acceptées, et renvoie une Decision. Elle ne modifie rien.
 """
 
 from datetime import timedelta
-from decimal import Decimal
+from decimal import ROUND_HALF_UP, Decimal
 from enum import Enum
 
 from pydantic import BaseModel
 
-from app.models import CATEGORIES_OBLIGATOIRES, LIBELLES_CATEGORIES, Canal, Categorie, Profil, Transaction
+from app.models import CATEGORIES_OBLIGATOIRES, LIBELLES_CATEGORIES, Canal, Categorie, Objectif, Profil, Transaction
 
 # Répétition : message renforcé à partir de la 2e commande sur 7 jours glissants.
 CATEGORIES_REPETITION = {Categorie.LIVRAISON_REPAS}
@@ -23,6 +24,9 @@ FENETRE_REPETITION = timedelta(days=7)
 
 # Délai utilisé si la catégorie n'a pas de délai dans le profil.
 DELAI_PAR_DEFAUT_MINUTES = 15
+
+# Au-delà de 3 % du montant de l'objectif, on montre ce que l'achat représente pour le projet.
+SEUIL_PART_OBJECTIF = Decimal("3")
 
 # Règles qui concernent un dépassement (seules visées par le blocage strict).
 REGLES_DE_LIMITE = {"limite_categorie", "budget_total"}
@@ -54,6 +58,18 @@ def format_euros(montant: Decimal) -> str:
 def est_achat_surveille(transaction: Transaction) -> bool:
     """Un achat est concerné s'il est en ligne et non nécessaire."""
     return transaction.canal == Canal.EN_LIGNE and transaction.categorie not in CATEGORIES_OBLIGATOIRES
+
+
+def part_de_l_objectif(montant: Decimal, objectif: Objectif) -> Decimal:
+    """Ce que représente un montant, en % du montant total de l'objectif, arrondi à 0,1 %."""
+    return (montant * 100 / objectif.montant).quantize(Decimal("0.1"), rounding=ROUND_HALF_UP)
+
+
+def pese_sur_l_objectif(montant: Decimal, objectif: Objectif) -> bool:
+    """Vrai si l'achat dépasse 3 % de l'objectif (et que l'objectif n'est pas déjà atteint)."""
+    if objectif.deja_epargne >= objectif.montant:
+        return False
+    return montant * 100 / objectif.montant > SEUIL_PART_OBJECTIF
 
 
 def achats_en_ligne_du_mois(transactions: list[Transaction], annee: int, mois: int) -> list[Transaction]:
@@ -121,7 +137,18 @@ def evaluer_achat(achat: Transaction, profil: Profil, transactions: list[Transac
                 message=f"Ce serait ta {rang}e commande « {nom_categorie} » en 7 jours.",
             ))
 
-    # 4. Blocage strict : un dépassement de limite ou de budget est refusé.
+    objectif = profil.objectif
+    if pese_sur_l_objectif(achat.montant, objectif):
+        part = str(part_de_l_objectif(achat.montant, objectif)).replace(".", ",").removesuffix(",0")
+        regles.append(RegleDeclenchee(
+            code="part_objectif",
+            message=(
+                f"Cet achat représente {part} % de ton objectif « {objectif.nom} » "
+                f"({format_euros(objectif.montant)}). Veux-tu vraiment le faire ?"
+            ),
+        ))
+
+    # 4. Blocage strict (jamais pour « part_objectif », qui est une information, pas une limite) : un dépassement de limite ou de budget est refusé.
     if profil.blocage_strict and any(r.code in REGLES_DE_LIMITE for r in regles):
         return Decision(statut=Statut.REFUSE, regles=regles)
 

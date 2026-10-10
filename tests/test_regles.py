@@ -10,7 +10,7 @@ from decimal import Decimal
 import pytest
 
 from app.models import Categorie, Transaction, charger_donnees
-from app.regles import Statut, evaluer_achat, format_euros
+from app.regles import Statut, evaluer_achat, format_euros, part_de_l_objectif, pese_sur_l_objectif
 
 DONNEES = charger_donnees()
 LEA = DONNEES.profil
@@ -42,7 +42,7 @@ def test_baskets_89_euros_a_1h_en_ligne_pause_de_30_minutes():
     decision = evaluer_achat(BASKETS_LA_NUIT, LEA, HISTORIQUE)
     assert decision.statut == Statut.PAUSE
     assert decision.delai_minutes == 30
-    assert codes(decision) == {"confirmation", "limite_categorie"}
+    assert codes(decision) == {"confirmation", "limite_categorie", "part_objectif"}
 
 
 def test_message_en_langage_clair_avec_le_delai():
@@ -91,7 +91,7 @@ def test_meme_decision_a_toute_heure(heure):
     decision = evaluer_achat(achat("Sneak'Air", "vetements", 89, quand), LEA, HISTORIQUE)
     assert decision.statut == Statut.PAUSE
     assert decision.delai_minutes == 30
-    assert codes(decision) == {"confirmation", "limite_categorie"}
+    assert codes(decision) == {"confirmation", "limite_categorie", "part_objectif"}
 
 
 # --- Tout achat en ligne non nécessaire demande confirmation ---
@@ -106,7 +106,8 @@ def test_petit_achat_sous_les_limites_demande_quand_meme_confirmation():
 def test_achat_pile_a_la_limite_sans_raison_supplementaire():
     # Les 89 € de baskets de septembre ne comptent pas pour octobre.
     tenue = achat("Mode Urbaine", "vetements", 60, QUATORZE_HEURES)
-    assert codes(evaluer_achat(tenue, LEA, HISTORIQUE)) == {"confirmation"}
+    # 60 € = 3,3 % de l'objectif de 1 800 € : seule la raison « part de l'objectif » s'ajoute.
+    assert codes(evaluer_achat(tenue, LEA, HISTORIQUE)) == {"confirmation", "part_objectif"}
 
 
 def test_budget_total_depasse():
@@ -166,3 +167,42 @@ def test_format_euros(montant, texte):
 def test_categorie_affichee_avec_ses_accents():
     decision = evaluer_achat(BASKETS_LA_NUIT, LEA, HISTORIQUE)
     assert "« vêtements »" in decision.regles[0].message
+
+
+# --- Part de l'objectif : au-delà de 3 % du projet, on montre ce que représente l'achat ---
+
+def test_exemple_du_cahier_des_charges_100_euros_sur_un_projet_de_1000():
+    projet = LEA.objectif.model_copy(update={"montant": Decimal("1000"), "deja_epargne": Decimal("0")})
+    assert part_de_l_objectif(Decimal("100"), projet) == Decimal("10.0")
+    assert pese_sur_l_objectif(Decimal("100"), projet)
+
+
+@pytest.mark.parametrize("montant, pese", [
+    ("54", False),     # 3 % pile de 1 800 € : pas au-delà
+    ("54.01", True),
+    ("15.80", False),  # une livraison de repas : 0,9 %
+])
+def test_seuil_des_3_pourcent(montant, pese):
+    assert pese_sur_l_objectif(Decimal(montant), LEA.objectif) == pese
+
+
+def test_message_des_baskets_4_virgule_9_pourcent_du_permis():
+    decision = evaluer_achat(achat("Sneak'Air", "vetements", 89, UNE_HEURE_DU_MATIN), LEA, HISTORIQUE)
+    regle = next(r for r in decision.regles if r.code == "part_objectif")
+    assert regle.message == (
+        "Cet achat représente 4,9 % de ton objectif « Permis de conduire » (1800 €). "
+        "Veux-tu vraiment le faire ?"
+    )
+
+
+def test_pas_de_message_si_l_objectif_est_deja_atteint():
+    atteint = LEA.objectif.model_copy(update={"deja_epargne": Decimal("1800")})
+    assert not pese_sur_l_objectif(Decimal("500"), atteint)
+
+
+def test_le_blocage_strict_ne_refuse_pas_pour_la_part_de_l_objectif():
+    strict = LEA.model_copy(update={"blocage_strict": True})
+    # Tenue à 60 € : pile à la limite vêtements, sous le budget, mais 3,3 % du permis.
+    decision = evaluer_achat(achat("Mode Urbaine", "vetements", 60, QUATORZE_HEURES), strict, HISTORIQUE)
+    assert decision.statut == Statut.PAUSE
+    assert {r.code for r in decision.regles} == {"confirmation", "part_objectif"}

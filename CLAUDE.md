@@ -106,8 +106,11 @@ Pour la démo, le temps est **avancé** avec l'horloge simulée (bouton « +30 m
 
 Raisons supplémentaires affichées dans le message :
 - l'achat ferait dépasser la limite de sa catégorie ou le budget total en ligne du mois ;
-- livraison de repas : à partir de la **2e commande sur 7 jours glissants**, le message est renforcé (règle « répétition »).
+- livraison de repas : à partir de la **2e commande sur 7 jours glissants**, le message est renforcé (règle « répétition ») ;
+- l'achat dépasse **3 % du montant de l'objectif** : on affiche ce qu'il représente (« Cet achat représente 4,9 % de ton objectif… Veux-tu vraiment le faire ? »), sauf si l'objectif est déjà atteint (règle « part_objectif »). En dessous de 3 %, c'est le questionnaire de réflexion qui s'affiche (voir ci-dessous).
 Chaque règle est formulée en langage clair ; toutes sont affichées ; le délai est celui de la catégorie. Le blocage strict ne refuse que les dépassements de limite ou de budget.
+
+**Questionnaire de réflexion (achat ≤ 3 % de l'objectif)** — activé par défaut, désactivable dans « Mon contrat ». Non intrusif : 2 questions au maximum (une commune + une de la catégorie, à tour de rôle), réponses en un clic, bouton « Passer », aucun délai ajouté, aucune réponse enregistrée ni jugée. Questions : commune « En as-tu vraiment besoin, ou est-ce une envie du moment ? » ; repas « Peux-tu te préparer quelque chose avec ce que tu as chez toi ? » / « Ne penses-tu pas que c'est plutôt l'ennui ou la fatigue ? » ; vêtements « As-tu déjà quelque chose de similaire dans ton armoire ? » / « Le porteras-tu au moins 10 fois ? » ; électronique « Ton appareil actuel fonctionne-t-il encore ? » / « As-tu comparé les prix ou pensé au reconditionné ? » ; jeux vidéo « As-tu fini le dernier jeu que tu as acheté ? » / « Son prix baisse souvent après la sortie : peux-tu attendre ? » ; abonnements « Utilises-tu vraiment tes abonnements actuels ? » / « Pourrais-tu en arrêter un autre à la place ? » ; autres « Si tu attends une semaine, en auras-tu toujours envie ? ».
 À chaque pause, le message de confirmation indique le délai avant validation. **Si l'utilisateur annule, l'appli l'incite à verser une somme conseillée sur son épargne.**
 
 ### Mémorisation de l'achat suspendu

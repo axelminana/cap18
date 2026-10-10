@@ -32,7 +32,7 @@ Documents complémentaires :
 python -m venv .venv
 .venv\Scripts\Activate.ps1
 pip install -r requirements.txt
-pytest                              # 149 tests
+pytest                              # 156 tests
 uvicorn app.main:app --reload       # puis ouvrir http://127.0.0.1:8000
 ```
 
@@ -67,7 +67,7 @@ La page de démo affiche **la boutique fictive à gauche** et **le téléphone d
 | Périmètre | Uniquement les **paiements en ligne**. Les achats en magasin et les dépenses nécessaires (loyer, factures, courses) ne sont jamais mis en pause. |
 | Pause de réflexion | **Tout achat en ligne non nécessaire** demande une confirmation après le délai de sa catégorie, **quelle que soit l'heure**. |
 | Délais conseillés | Livraison de repas 5 min, vêtements 30 min, électronique 60 min, jeux vidéo 30 min, abonnements 10 min, autres 15 min. Modifiables par l'utilisateur (< 24 h). |
-| Raisons affichées en plus | Limite de la catégorie dépassée, budget en ligne du mois dépassé, 2e livraison de repas en 7 jours. |
+| Raisons affichées en plus | Limite de la catégorie dépassée, budget en ligne du mois dépassé, 2e livraison de repas en 7 jours, achat de plus de 3 % de l'objectif (« Cet achat représente 4,9 % de ton objectif… »). |
 | Achat mémorisé | Le 1er essai est refusé et mémorisé. Un nouvel essai **même commerçant, même montant** après le délai passe sans nouvelle pause. Avant le délai, il reste en pause. Expiration au bout de **24 h**. |
 | Blocage strict | **Désactivé par défaut.** S'il est activé, un achat qui dépasse une limite est refusé. La désactivation prend effet immédiatement. |
 | Après un renoncement | Félicitations, avec une somme conseillée = **50 % du montant évité**, arrondie à l'euro inférieur, plafonnée au budget en ligne restant. Un **curseur** (0 à 100 %, 50 % par défaut) permet d'en choisir une autre. |
@@ -309,13 +309,13 @@ HTML, CSS et JavaScript **sans framework**. Le JavaScript **ne fait aucun calcul
 
 ## 6. Les tests
 
-**149 tests pytest**, sur les données réelles de Léa et des cas concrets. On les lance avec `pytest`.
+**156 tests pytest**, sur les données réelles de Léa et des cas concrets. On les lance avec `pytest`.
 
 | Fichier | Tests | Ce qui est vérifié |
 |---|---|---|
 | `test_models.py` | 14 | Chargement des JSON, valeurs par défaut, erreurs claires (montant négatif, catégorie inconnue, limite > budget, délai ≥ 24 h…) |
 | `test_horloge.py` | 10 | +30 min, passage de minuit, décembre → janvier, le temps ne recule pas |
-| `test_regles.py` | 23 | Cas de référence (voir ci-dessous) |
+| `test_regles.py` | 30 | Cas de référence (voir ci-dessous) |
 | `test_suspension.py` | 13 | Les 5 règles de mémorisation, avec les cas limites (pile au déblocage, 23 h 59, 24 h pile) |
 | `test_epargne.py` | 41 | Plan Livret A / PEA, seuil des 5 ans, échéance dépassée, somme conseillée, positions du curseur, bilans (dont un mois sans achat), nouveau projet, échéance dépassée |
 | `test_paiement.py` | 13 | Variantes A et B, blocage strict, **démo complète avec l'horloge simulée**, bilan proposé à chaque fin de mois |

@@ -49,7 +49,7 @@ def test_premier_essai_pause_et_achat_memorise(compte):
     assert resultat.statut == StatutPaiement.PAUSE
     assert resultat.secondes_restantes == 30 * 60
     assert resultat.heure_deblocage == datetime(2026, 10, 10, 1, 30)
-    assert codes(resultat) == {"confirmation", "limite_categorie"}
+    assert codes(resultat) == {"confirmation", "limite_categorie", "part_objectif"}
     assert len(nouveau.suspendus) == 1
     assert len(nouveau.transactions) == len(compte.transactions)  # rien n'est payé
     assert compte.suspendus == []  # le compte d'origine n'a pas bougé

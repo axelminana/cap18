@@ -39,7 +39,7 @@ def test_variante_b_par_l_api():
     reponse = client.post("/api/paiement", json=BASKETS).json()
     assert reponse["statut"] == "pause"
     assert reponse["secondes_restantes"] == 1800
-    assert {r["code"] for r in reponse["regles"]} == {"confirmation", "limite_categorie"}
+    assert {r["code"] for r in reponse["regles"]} == {"confirmation", "limite_categorie", "part_objectif"}
 
     suspendus = client.get("/api/etat").json()["suspendus"]
     assert len(suspendus) == 1 and suspendus[0]["secondes_restantes"] == 1800
@@ -181,7 +181,7 @@ def test_pages_du_front_servies(page):
 def test_l_appli_recoit_les_raisons_de_la_pause_et_les_libelles():
     client.post("/api/paiement", json=BASKETS)
     donnees = client.get("/api/etat").json()
-    assert {r["code"] for r in donnees["suspendus"][0]["regles"]} == {"confirmation", "limite_categorie"}
+    assert {r["code"] for r in donnees["suspendus"][0]["regles"]} == {"confirmation", "limite_categorie", "part_objectif"}
     assert donnees["libelles_categories"]["vetements"] == "vêtements"
     assert donnees["delais_conseilles"]["vetements"] == 30
 
