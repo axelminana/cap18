@@ -32,7 +32,7 @@ Documents complémentaires :
 python -m venv .venv
 .venv\Scripts\Activate.ps1
 pip install -r requirements.txt
-pytest                              # 125 tests
+pytest                              # 143 tests
 uvicorn app.main:app --reload       # puis ouvrir http://127.0.0.1:8000
 ```
 
@@ -45,7 +45,8 @@ La page de démo affiche **la boutique fictive à gauche** et **le téléphone d
 1. **Variante A, Léa renonce.**
    - Dans la boutique, « Payer 89 € » pour les baskets.
    - Sur le téléphone, une pause de réflexion de 30 min s'affiche, avec ses raisons.
-   - « Je renonce » → « Bravo ! … Et si tu mettais 44 € de côté ? » → « Épargner 44 € ».
+   - « Je renonce » → « Bravo ! … Et si tu mettais 44 € de côté ? ».
+   - Le curseur est à 50 % (44 €) ; on peut le déplacer (ex. 75 % → 66 €) → « Épargner 44 € ».
    - L'onglet **Mon score** affiche 1 achat évité et 44 € épargnés.
 2. **« Réinitialiser la démo ».**
 3. **Variante B, Léa attend.**
@@ -54,6 +55,7 @@ La page de démo affiche **la boutique fictive à gauche** et **le téléphone d
 4. **Fin du mois.**
    - « Fin du mois » → carte du bilan d'octobre sur l'Accueil.
    - Choix : tout épargner, une partie ou rien.
+   - « Fin du mois » une 2e fois → bilan de novembre (mois sans achat : 120 € économisés).
    - Onglets **Bilan** et **Mon score**.
 
 ---
@@ -68,9 +70,10 @@ La page de démo affiche **la boutique fictive à gauche** et **le téléphone d
 | Raisons affichées en plus | Limite de la catégorie dépassée, budget en ligne du mois dépassé, 2e livraison de repas en 7 jours. |
 | Achat mémorisé | Le 1er essai est refusé et mémorisé. Un nouvel essai **même commerçant, même montant** après le délai passe sans nouvelle pause. Avant le délai, il reste en pause. Expiration au bout de **24 h**. |
 | Blocage strict | **Désactivé par défaut.** S'il est activé, un achat qui dépasse une limite est refusé. La désactivation prend effet immédiatement. |
-| Après un renoncement | Félicitations, avec une somme conseillée = **50 % du montant évité**, arrondie à l'euro inférieur, plafonnée au budget en ligne restant. |
+| Après un renoncement | Félicitations, avec une somme conseillée = **50 % du montant évité**, arrondie à l'euro inférieur, plafonnée au budget en ligne restant. Un **curseur** (0 à 100 %, 50 % par défaut) permet d'en choisir une autre. |
 | Plan d'épargne | Objectif à **moins de 5 ans → Livret A**, **5 ans ou plus → PEA** (capital non garanti). Versement mensuel = reste à épargner / mois restants, arrondi à l'euro supérieur. Toujours présenté comme une **suggestion**. |
-| Bilan du mois | Économies = budget en ligne − achats en ligne du mois (0 si dépassé). L'utilisateur choisit d'épargner tout, une partie ou rien. |
+| Bilan du mois | Économies = budget en ligne − achats en ligne du mois (0 si dépassé). Proposé à chaque fin de mois, une seule fois, même pour un mois sans achat. L'utilisateur choisit d'épargner tout, une partie ou rien. |
+| Objectif atteint | L'utilisateur démarre un nouveau projet ; ce qu'il a épargné en plus est reporté dessus. |
 | Tableau de score | **Strictement personnel**, uniquement des encouragements : séries de mois réussis, achats évités, total épargné, meilleur mois, badges. |
 
 ---
@@ -200,12 +203,14 @@ Ces fonctions ne modifient jamais la liste reçue : elles en renvoient une nouve
 **Plan conseillé et renoncement :**
 - **`plan_conseille(objectif, aujourd_hui)`** : Livret A ou PEA selon l'horizon, avec le versement mensuel et les mentions (« pas un conseil en investissement », « capital non garanti » pour le PEA). Pour Léa : (1 800 − 150) / 12 mois → **138 €/mois sur un Livret A**. Si l'échéance est dépassée, on compte au moins 1 mois, jamais de division par zéro.
 - **`somme_conseillee()`** et **`proposition_apres_renoncement()`** produisent la somme et le message de félicitations. Pour les baskets : **44 €**. Si le budget est déjà dépassé, Léa reçoit les félicitations seules, sans reproche.
+- **`sommes_par_pourcentage()`** calcule la somme de chaque position du curseur (0, 5… 100 %) avec la même règle. Le JavaScript ne fait que lire ce tableau : aucun calcul côté navigateur.
 - **`budget_restant()`** : budget en ligne moins les achats en ligne du mois.
 
 **Bilan et progression :**
-- **`bilan_mensuel()`** et **`historique()`** : économies par mois. L'historique ne contient que les mois terminés. Pour Léa : août 71,51 € économisés, septembre dépassé.
+- **`bilan_mensuel()`** et **`historique()`** : économies par mois. L'historique contient tous les mois terminés, **même un mois sans achat** (tout le budget est alors économisé). Pour Léa : août 71,51 € économisés, septembre dépassé.
 - **`epargner()`** renvoie un nouvel objectif. Un montant négatif est refusé.
 - **`progression()`** : pourcentage atteint, plafonné à 100 %.
+- **`objectif_atteint()`**, **`surplus()`** et **`nouvel_objectif()`** : quand l'objectif est atteint, on démarre le projet suivant en reportant le surplus (1 850 € pour 1 800 € → 50 € reportés).
 
 ### `app/paiement.py` : l'orchestration du parcours
 **`Compte`** regroupe tout l'état de Léa :
@@ -230,6 +235,8 @@ Achat déjà mémorisé ? (suspension.py)
 **Les deux autres fonctions :**
 - **`renoncer()`** retire l'achat suspendu, l'enregistre comme achat évité et renvoie la proposition d'épargne.
 - **`verser_epargne()`** met à jour l'objectif et enregistre le versement. « Ne rien épargner » n'est pas un versement.
+- **`bilan_a_epargner()`** et **`epargner_bilan()`** : le bilan du dernier mois terminé est proposé une seule fois. Le mois traité est enregistré dans le `Compte` (côté serveur), donc recharger la page ne change rien.
+- **`demarrer_nouvel_objectif()`** remplace l'objectif atteint ; les badges d'objectif déjà gagnés restent acquis.
 
 ### `app/score.py` : le tableau de score personnel (US4)
 - **`series()`** parcourt les mois terminés : un mois réussi fait +1, un mois dépassé remet la série à 0. On retient la série en cours et le record.
@@ -253,6 +260,8 @@ Il n'y a aucune comparaison avec d'autres utilisateurs et aucun badge négatif.
 | `POST /api/paiement` | Paiement. Reçoit seulement `{commercant, montant}` : **la catégorie est détectée automatiquement** à partir du commerçant, comme le ferait le code MCC d'une vraie transaction carte |
 | `POST /api/renoncer` | Renoncer à un achat suspendu |
 | `POST /api/epargner` | Verser vers l'objectif |
+| `POST /api/bilan/epargner` | Épargner tout, une partie ou rien du bilan du mois terminé |
+| `POST /api/objectif/nouveau` | Démarrer un nouveau projet quand l'objectif est atteint |
 | `GET /api/bilan` | Bilan et historique |
 | `GET /api/score` | Tableau de score |
 | `PUT /api/profil` | Modifier le contrat |
@@ -297,7 +306,7 @@ HTML, CSS et JavaScript **sans framework**. Le JavaScript **ne fait aucun calcul
 
 ## 6. Les tests
 
-**125 tests pytest**, sur les données réelles de Léa et des cas concrets. On les lance avec `pytest`.
+**143 tests pytest**, sur les données réelles de Léa et des cas concrets. On les lance avec `pytest`.
 
 | Fichier | Tests | Ce qui est vérifié |
 |---|---|---|
@@ -305,10 +314,10 @@ HTML, CSS et JavaScript **sans framework**. Le JavaScript **ne fait aucun calcul
 | `test_horloge.py` | 10 | +30 min, passage de minuit, décembre → janvier, le temps ne recule pas |
 | `test_regles.py` | 23 | Cas de référence (voir ci-dessous) |
 | `test_suspension.py` | 13 | Les 5 règles de mémorisation, avec les cas limites (pile au déblocage, 23 h 59, 24 h pile) |
-| `test_epargne.py` | 24 | Plan Livret A / PEA, seuil des 5 ans, échéance dépassée, somme conseillée, bilans d'août et de septembre |
-| `test_paiement.py` | 10 | Variantes A et B, blocage strict, **démo complète avec l'horloge simulée** |
-| `test_score.py` | 11 | Séries, score de départ, progression après renoncement, badges |
-| `test_api.py` | 20 | Les variantes A et B par requêtes HTTP, erreurs 404 / 400 / 422, pages servies |
+| `test_epargne.py` | 36 | Plan Livret A / PEA, seuil des 5 ans, échéance dépassée, somme conseillée, positions du curseur, bilans (dont un mois sans achat), nouveau projet |
+| `test_paiement.py` | 13 | Variantes A et B, blocage strict, **démo complète avec l'horloge simulée**, bilan proposé à chaque fin de mois |
+| `test_score.py` | 12 | Séries, score de départ, progression après renoncement, badges (conservés avec un nouveau projet) |
+| `test_api.py` | 22 | Les variantes A et B par requêtes HTTP, bilan et nouveau projet, erreurs 404 / 400 / 422, pages servies |
 
 **Les cas de référence demandés dans le cahier des charges :**
 
