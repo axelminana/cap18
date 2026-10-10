@@ -2,7 +2,7 @@
 
 Document de référence pour le jury technique. Mis à jour à chaque étape du développement.
 
-**Dernière mise à jour :** samedi 10 octobre 2026 — étape 3 (moteur de déclenchement).
+**Dernière mise à jour :** samedi 10 octobre 2026 — étape 4 (mémorisation des achats suspendus).
 
 ## 1. Vue d'ensemble
 
@@ -54,12 +54,12 @@ Document de référence pour le jury technique. Mis à jour à chaque étape du 
 | `app/models.py` | Modèles Pydantic + chargement et validation des JSON | ✅ fait |
 | `app/horloge.py` | Horloge réelle ou simulée (avancer le temps, changer de mois) | ✅ fait |
 | `app/regles.py` | Pause de réflexion, raisons affichées, blocage strict | ✅ fait |
-| `app/suspension.py` | Mémorisation des achats suspendus (déblocage, expiration 24 h) | à faire (étape 4) |
+| `app/suspension.py` | Mémorisation des achats suspendus (déblocage, expiration 24 h) | ✅ fait |
 | `app/epargne.py` | Plan conseillé, somme conseillée, bilan mensuel | à faire (étape 5) |
 | `app/paiement.py` | Enchaîne règles + suspension pour un paiement | à faire (étape 6) |
 | `app/main.py` | API FastAPI + service du front | à faire (étape 7) |
 | `static/` | `boutique.html`, `banque.html`, `style.css`, `app.js` | à faire (étape 8) |
-| `tests/` | Un fichier de tests par module métier (`test_models.py` : 11 tests, `test_horloge.py` : 10 tests, `test_regles.py` : 22 tests) | en cours |
+| `tests/` | Un fichier de tests par module métier (`test_models.py` : 12, `test_horloge.py` : 10, `test_regles.py` : 22, `test_suspension.py` : 12 — 56 tests) | en cours |
 
 ## 4. Plan de développement
 
@@ -69,7 +69,7 @@ Document de référence pour le jury technique. Mis à jour à chaque étape du 
 | 1 | Modèles Pydantic + données fictives | ✅ fait |
 | 2 | Horloge simulable | ✅ fait |
 | 3 | Moteur de la pause de réflexion | ✅ fait |
-| 4 | Mémorisation des achats suspendus | à faire |
+| 4 | Mémorisation des achats suspendus | ✅ fait |
 | 5 | Épargne : plan, somme conseillée, bilan | à faire |
 | 6 | Orchestration d'un paiement | à faire |
 | 7 | API FastAPI | à faire |
@@ -86,6 +86,7 @@ Document de référence pour le jury technique. Mis à jour à chaque étape du 
 - **Horloge à deux modes :** réelle par défaut, ou simulée (heure fixée qui n'avance que sur demande : « +30 min », « mois suivant » au 1er à 9 h). Le temps ne peut pas reculer. Seule l'API l'utilise pour fournir `maintenant` aux fonctions métier.
 - **Moteur de la pause (`evaluer_achat`) :** l'heure de l'achat n'a aucune importance. Ordre de décision : hors périmètre (magasin ou dépense nécessaire) → accepté ; sinon la règle « confirmation » s'applique toujours ; blocage strict + dépassement de limite ou de budget → refusé ; sinon → pause avec le délai de la catégorie (15 min par défaut).
 - **Raisons supplémentaires affichées :** limite de catégorie dépassée, budget total en ligne du mois dépassé, « répétition » dès la 2e livraison de repas sur 7 jours glissants. Chaque règle a un `code` stable (pour le front et les tests) et un `message` en langage clair. La règle de nuit a été abandonnée (décision d'équipe).
+- **Mémorisation (`suspension.py`) :** `verifier_tentative` renvoie l'un des 3 états : `nouvel_achat` (rien de mémorisé, montant ou commerçant différent, ou achat expiré), `toujours_suspendu` (avec les secondes restantes, pour le compte à rebours), `debloque`. `memoriser` ajoute l'achat (heure de déblocage = essai + délai) et nettoie les achats expirés ; `retirer` l'enlève une fois payé ou abandonné. Le temps est porté par l'achat (`date_heure`). Un délai de réflexion doit être inférieur à 24 h (contrôlé dans `Profil`), sinon l'achat expirerait avant d'être débloqué.
 - **État passé en paramètre :** la liste des achats suspendus est donnée à la fonction, qui renvoie la nouvelle liste. Seule l'API garde l'état en mémoire.
 
 

@@ -97,6 +97,13 @@ def test_categorie_obligatoire_sans_limite_ni_delai():
         Profil(**profil)
 
 
+def test_delai_de_24h_ou_plus_refuse():
+    profil = profil_valide()
+    profil["delais_minutes"] = {"vetements": 24 * 60}
+    with pytest.raises(ValidationError, match="24 h"):
+        Profil(**profil)
+
+
 def test_fichier_invalide_indique_le_nom_du_fichier(tmp_path):
     profil = profil_valide()
     profil["budget_en_ligne"] = -10

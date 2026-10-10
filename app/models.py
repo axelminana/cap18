@@ -32,6 +32,9 @@ class Categorie(str, Enum):
 # Dépenses nécessaires : jamais de pause, jamais de limite, hors budget en ligne.
 CATEGORIES_OBLIGATOIRES = {Categorie.LOYER, Categorie.FACTURES, Categorie.COURSES}
 
+# Un délai de réflexion doit rester inférieur à 24 h (durée de vie d'un achat mémorisé).
+DELAI_MAXIMUM_MINUTES = 24 * 60
+
 
 class Canal(str, Enum):
     """Où le paiement a lieu. Seul le canal en ligne est concerné par Cap 18."""
@@ -91,8 +94,12 @@ class Profil(BaseModel):
                     f"positive et ne pas dépasser le budget en ligne ({self.budget_en_ligne} €)."
                 )
         for categorie, delai in self.delais_minutes.items():
-            if delai < 0:
-                raise ValueError(f"Le délai de « {categorie.value} » ne peut pas être négatif.")
+            # Un achat mémorisé expire après 24 h : le délai doit être plus court.
+            if delai < 0 or delai >= DELAI_MAXIMUM_MINUTES:
+                raise ValueError(
+                    f"Le délai de « {categorie.value} » doit être compris "
+                    "entre 0 et 24 h (exclu)."
+                )
         return self
 
 
