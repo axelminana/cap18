@@ -1,0 +1,15 @@
+[
+  { "nom": "Résidence Les Tilleuls", "categorie": "loyer" },
+  { "nom": "Énergie Verte", "categorie": "factures" },
+  { "nom": "Mobile Éco", "categorie": "factures" },
+  { "nom": "Assur'Jeunes", "categorie": "factures" },
+  { "nom": "Supermarché du Coin", "categorie": "courses" },
+  { "nom": "MiamExpress", "categorie": "livraison_repas" },
+  { "nom": "Pizza Minute", "categorie": "livraison_repas" },
+  { "nom": "Sneak'Air", "categorie": "vetements" },
+  { "nom": "Mode Urbaine", "categorie": "vetements" },
+  { "nom": "TechnoPlus", "categorie": "electronique" },
+  { "nom": "GameZone", "categorie": "jeux_video" },
+  { "nom": "StreamBox", "categorie": "abonnements" },
+  { "nom": "Bazar en Ligne", "categorie": "autres" }
+]

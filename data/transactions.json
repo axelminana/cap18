@@ -1,0 +1,32 @@
+[
+  { "commercant": "Résidence Les Tilleuls", "categorie": "loyer", "montant": 420, "canal": "en_ligne", "date_heure": "2026-08-01T09:00:00" },
+  { "commercant": "Énergie Verte", "categorie": "factures", "montant": 45, "canal": "en_ligne", "date_heure": "2026-08-03T09:00:00" },
+  { "commercant": "Mobile Éco", "categorie": "factures", "montant": 15, "canal": "en_ligne", "date_heure": "2026-08-05T09:00:00" },
+  { "commercant": "Assur'Jeunes", "categorie": "factures", "montant": 10, "canal": "en_ligne", "date_heure": "2026-08-05T09:05:00" },
+  { "commercant": "StreamBox", "categorie": "abonnements", "montant": 9.99, "canal": "en_ligne", "date_heure": "2026-08-06T10:00:00" },
+  { "commercant": "Supermarché du Coin", "categorie": "courses", "montant": 54.30, "canal": "magasin", "date_heure": "2026-08-08T18:20:00" },
+  { "commercant": "MiamExpress", "categorie": "livraison_repas", "montant": 16.50, "canal": "en_ligne", "date_heure": "2026-08-14T20:45:00" },
+  { "commercant": "Supermarché du Coin", "categorie": "courses", "montant": 61.10, "canal": "magasin", "date_heure": "2026-08-22T17:40:00" },
+  { "commercant": "Bazar en Ligne", "categorie": "autres", "montant": 22, "canal": "en_ligne", "date_heure": "2026-08-25T15:10:00" },
+
+  { "commercant": "Résidence Les Tilleuls", "categorie": "loyer", "montant": 420, "canal": "en_ligne", "date_heure": "2026-09-01T09:00:00" },
+  { "commercant": "Énergie Verte", "categorie": "factures", "montant": 45, "canal": "en_ligne", "date_heure": "2026-09-03T09:00:00" },
+  { "commercant": "Mobile Éco", "categorie": "factures", "montant": 15, "canal": "en_ligne", "date_heure": "2026-09-05T09:00:00" },
+  { "commercant": "Assur'Jeunes", "categorie": "factures", "montant": 10, "canal": "en_ligne", "date_heure": "2026-09-05T09:05:00" },
+  { "commercant": "StreamBox", "categorie": "abonnements", "montant": 9.99, "canal": "en_ligne", "date_heure": "2026-09-06T10:00:00" },
+  { "commercant": "Supermarché du Coin", "categorie": "courses", "montant": 48.75, "canal": "magasin", "date_heure": "2026-09-07T18:00:00" },
+  { "commercant": "Sneak'Air", "categorie": "vetements", "montant": 89, "canal": "en_ligne", "date_heure": "2026-09-12T01:04:00" },
+  { "commercant": "MiamExpress", "categorie": "livraison_repas", "montant": 18.90, "canal": "en_ligne", "date_heure": "2026-09-13T21:30:00" },
+  { "commercant": "Pizza Minute", "categorie": "livraison_repas", "montant": 14.50, "canal": "en_ligne", "date_heure": "2026-09-15T23:40:00" },
+  { "commercant": "MiamExpress", "categorie": "livraison_repas", "montant": 17.20, "canal": "en_ligne", "date_heure": "2026-09-17T22:10:00" },
+  { "commercant": "GameZone", "categorie": "jeux_video", "montant": 14.99, "canal": "en_ligne", "date_heure": "2026-09-19T00:35:00" },
+  { "commercant": "Supermarché du Coin", "categorie": "courses", "montant": 39.20, "canal": "magasin", "date_heure": "2026-09-24T17:15:00" },
+
+  { "commercant": "Résidence Les Tilleuls", "categorie": "loyer", "montant": 420, "canal": "en_ligne", "date_heure": "2026-10-01T09:00:00" },
+  { "commercant": "Énergie Verte", "categorie": "factures", "montant": 45, "canal": "en_ligne", "date_heure": "2026-10-03T09:00:00" },
+  { "commercant": "Mobile Éco", "categorie": "factures", "montant": 15, "canal": "en_ligne", "date_heure": "2026-10-05T09:00:00" },
+  { "commercant": "Assur'Jeunes", "categorie": "factures", "montant": 10, "canal": "en_ligne", "date_heure": "2026-10-05T09:05:00" },
+  { "commercant": "StreamBox", "categorie": "abonnements", "montant": 9.99, "canal": "en_ligne", "date_heure": "2026-10-06T10:00:00" },
+  { "commercant": "Supermarché du Coin", "categorie": "courses", "montant": 52.40, "canal": "magasin", "date_heure": "2026-10-07T18:30:00" },
+  { "commercant": "MiamExpress", "categorie": "livraison_repas", "montant": 15.80, "canal": "en_ligne", "date_heure": "2026-10-08T20:15:00" }
+]

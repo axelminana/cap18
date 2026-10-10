@@ -1,0 +1,35 @@
+{
+  "prenom": "Léa",
+  "age": 18,
+  "revenus_mensuels": 850,
+  "depenses_obligatoires": [
+    { "libelle": "Loyer", "montant": 420 },
+    { "libelle": "Électricité et internet", "montant": 45 },
+    { "libelle": "Forfait téléphone", "montant": 15 },
+    { "libelle": "Assurance habitation", "montant": 10 }
+  ],
+  "budget_en_ligne": 120,
+  "limites": {
+    "livraison_repas": 40,
+    "vetements": 60,
+    "electronique": 50,
+    "jeux_video": 20,
+    "abonnements": 20,
+    "autres": 30
+  },
+  "delais_minutes": {
+    "livraison_repas": 5,
+    "vetements": 30,
+    "electronique": 60,
+    "jeux_video": 30,
+    "abonnements": 10,
+    "autres": 15
+  },
+  "blocage_strict": false,
+  "objectif": {
+    "nom": "Permis de conduire",
+    "montant": 1800,
+    "echeance": "2027-10-10",
+    "deja_epargne": 150
+  }
+}
