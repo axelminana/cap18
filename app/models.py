@@ -29,8 +29,8 @@ class Categorie(str, Enum):
     AUTRES = "autres"
 
 
-# Dépenses obligatoires : jamais de pause, jamais de limite.
-CATEGORIES_OBLIGATOIRES = {Categorie.LOYER, Categorie.FACTURES}
+# Dépenses nécessaires : jamais de pause, jamais de limite, hors budget en ligne.
+CATEGORIES_OBLIGATOIRES = {Categorie.LOYER, Categorie.FACTURES, Categorie.COURSES}
 
 
 class Canal(str, Enum):

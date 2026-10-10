@@ -1,8 +1,11 @@
-"""Moteur de déclenchement de la pause de réflexion (US2).
+"""Moteur de la pause de réflexion (US2).
 
-evaluer_achat() est une fonction pure : elle reçoit l'achat tenté (avec son heure),
-le profil et les transactions déjà acceptées, et renvoie une Decision.
-Elle ne lit pas l'heure système et ne modifie rien.
+Tout achat en ligne non nécessaire est mis en pause, quelle que soit l'heure :
+il faut le confirmer après le délai de sa catégorie. Le message liste aussi les
+raisons supplémentaires (limite dépassée, budget dépassé, commandes répétées).
+
+evaluer_achat() est une fonction pure : elle reçoit l'achat tenté, le profil et
+les transactions déjà acceptées, et renvoie une Decision. Elle ne modifie rien.
 """
 
 from datetime import timedelta
@@ -13,22 +16,15 @@ from pydantic import BaseModel
 
 from app.models import CATEGORIES_OBLIGATOIRES, Canal, Categorie, Profil, Transaction
 
-# Achat nocturne : entre 23 h et 4 h, au-delà de 20 €.
-HEURE_DEBUT_NUIT = 23
-HEURE_FIN_NUIT = 4
-SEUIL_NOCTURNE = Decimal("20")
-
-# Catégories toujours mises en pause, même au premier achat.
-CATEGORIES_TOUJOURS_EN_PAUSE = {Categorie.LIVRAISON_REPAS}
-
 # Répétition : message renforcé à partir de la 2e commande sur 7 jours glissants.
+CATEGORIES_REPETITION = {Categorie.LIVRAISON_REPAS}
 SEUIL_REPETITION = 2
 FENETRE_REPETITION = timedelta(days=7)
 
 # Délai utilisé si la catégorie n'a pas de délai dans le profil.
 DELAI_PAR_DEFAUT_MINUTES = 15
 
-# Règles qui concernent un dépassement de limite (seules visées par le blocage strict).
+# Règles qui concernent un dépassement (seules visées par le blocage strict).
 REGLES_DE_LIMITE = {"limite_categorie", "budget_total"}
 
 
@@ -56,21 +52,28 @@ def format_euros(montant: Decimal) -> str:
 
 
 def est_achat_surveille(transaction: Transaction) -> bool:
-    """Un achat compte dans le budget s'il est en ligne et non obligatoire."""
+    """Un achat est concerné s'il est en ligne et non nécessaire."""
     return transaction.canal == Canal.EN_LIGNE and transaction.categorie not in CATEGORIES_OBLIGATOIRES
 
 
-def est_la_nuit(achat: Transaction) -> bool:
-    heure = achat.date_heure.hour
-    return heure >= HEURE_DEBUT_NUIT or heure < HEURE_FIN_NUIT
-
-
 def evaluer_achat(achat: Transaction, profil: Profil, transactions: list[Transaction]) -> Decision:
-    # 1. Hors périmètre : achat en magasin ou dépense obligatoire.
+    # 1. Hors périmètre : achat en magasin ou dépense nécessaire.
     if not est_achat_surveille(achat):
         return Decision(statut=Statut.ACCEPTE)
 
-    # Dépenses en ligne déjà acceptées pendant le mois de l'achat.
+    nom_categorie = achat.categorie.value.replace("_", " ")
+    delai = profil.delais_minutes.get(achat.categorie, DELAI_PAR_DEFAUT_MINUTES)
+
+    # 2. Règle de base : tout achat en ligne non nécessaire demande une confirmation.
+    regles = [RegleDeclenchee(
+        code="confirmation",
+        message=(
+            f"Achat en ligne « {nom_categorie} » de {format_euros(achat.montant)} : "
+            f"tu as choisi de prendre {delai} min de réflexion avant de le valider."
+        ),
+    )]
+
+    # 3. Raisons supplémentaires, à partir des dépenses en ligne du mois.
     du_mois = [
         t for t in transactions
         if est_achat_surveille(t)
@@ -79,10 +82,6 @@ def evaluer_achat(achat: Transaction, profil: Profil, transactions: list[Transac
     ]
     total_mois = sum((t.montant for t in du_mois), Decimal("0"))
     total_categorie = sum((t.montant for t in du_mois if t.categorie == achat.categorie), Decimal("0"))
-    nom_categorie = achat.categorie.value.replace("_", " ")
-
-    # 2. Calcul de toutes les règles déclenchées.
-    regles: list[RegleDeclenchee] = []
 
     limite = profil.limites.get(achat.categorie)
     if limite is not None and total_categorie + achat.montant > limite:
@@ -105,21 +104,7 @@ def evaluer_achat(achat: Transaction, profil: Profil, transactions: list[Transac
             ),
         ))
 
-    if est_la_nuit(achat) and achat.montant > SEUIL_NOCTURNE:
-        regles.append(RegleDeclenchee(
-            code="nocturne",
-            message=(
-                f"Il est {achat.date_heure.hour} h {achat.date_heure.minute:02d} : "
-                f"la nuit (entre {HEURE_DEBUT_NUIT} h et {HEURE_FIN_NUIT} h), tu prends le temps "
-                f"de réfléchir avant tout achat de plus de {format_euros(SEUIL_NOCTURNE)}."
-            ),
-        ))
-
-    if achat.categorie in CATEGORIES_TOUJOURS_EN_PAUSE:
-        regles.append(RegleDeclenchee(
-            code="categorie_impulsive",
-            message=f"Tu prends quelques minutes avant chaque commande « {nom_categorie} ».",
-        ))
+    if achat.categorie in CATEGORIES_REPETITION:
         recentes = [
             t for t in transactions
             if est_achat_surveille(t)
@@ -133,14 +118,9 @@ def evaluer_achat(achat: Transaction, profil: Profil, transactions: list[Transac
                 message=f"Ce serait ta {rang}e commande « {nom_categorie} » en 7 jours.",
             ))
 
-    # 3. Blocage strict : un dépassement de limite est refusé.
+    # 4. Blocage strict : un dépassement de limite ou de budget est refusé.
     if profil.blocage_strict and any(r.code in REGLES_DE_LIMITE for r in regles):
         return Decision(statut=Statut.REFUSE, regles=regles)
 
-    # 4. Au moins une règle : pause avec le délai de la catégorie.
-    if regles:
-        delai = profil.delais_minutes.get(achat.categorie, DELAI_PAR_DEFAUT_MINUTES)
-        return Decision(statut=Statut.PAUSE, regles=regles, delai_minutes=delai)
-
-    # 5. Sinon, l'achat passe.
-    return Decision(statut=Statut.ACCEPTE)
+    # 5. Sinon : pause avec le délai de la catégorie.
+    return Decision(statut=Statut.PAUSE, regles=regles, delai_minutes=delai)

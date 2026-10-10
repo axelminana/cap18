@@ -1,4 +1,4 @@
-"""Tests du moteur de déclenchement de la pause, sur des cas concrets.
+"""Tests du moteur de la pause de réflexion, sur des cas concrets.
 
 Le profil est celui de Léa (data/profil.json) :
 budget en ligne 120 €, limite vêtements 60 €, délai vêtements 30 min, délai repas 5 min.
@@ -9,7 +9,7 @@ from decimal import Decimal
 
 import pytest
 
-from app.models import Transaction, charger_donnees
+from app.models import Categorie, Transaction, charger_donnees
 from app.regles import Statut, evaluer_achat, format_euros
 
 DONNEES = charger_donnees()
@@ -42,14 +42,13 @@ def test_baskets_89_euros_a_1h_en_ligne_pause_de_30_minutes():
     decision = evaluer_achat(BASKETS_LA_NUIT, LEA, HISTORIQUE)
     assert decision.statut == Statut.PAUSE
     assert decision.delai_minutes == 30
-    assert codes(decision) == {"limite_categorie", "nocturne"}
+    assert codes(decision) == {"confirmation", "limite_categorie"}
 
 
-def test_message_en_langage_clair():
+def test_message_en_langage_clair_avec_le_delai():
     decision = evaluer_achat(BASKETS_LA_NUIT, LEA, HISTORIQUE)
-    message_limite = decision.regles[0].message
-    assert "89 €" in message_limite and "60 €" in message_limite
-    assert "1 h 00" in decision.regles[1].message
+    assert "30 min" in decision.regles[0].message
+    assert "89 €" in decision.regles[1].message and "60 €" in decision.regles[1].message
 
 
 def test_meme_achat_en_magasin_pas_de_pause():
@@ -57,11 +56,16 @@ def test_meme_achat_en_magasin_pas_de_pause():
     assert evaluer_achat(en_magasin, LEA, HISTORIQUE).statut == Statut.ACCEPTE
 
 
-def test_loyer_jamais_de_pause_meme_la_nuit_et_en_blocage_strict():
+def test_loyer_jamais_de_pause_meme_en_blocage_strict():
     loyer = achat("Résidence Les Tilleuls", "loyer", 420, UNE_HEURE_DU_MATIN)
     lea_stricte = LEA.model_copy(update={"blocage_strict": True})
     assert evaluer_achat(loyer, LEA, HISTORIQUE).statut == Statut.ACCEPTE
     assert evaluer_achat(loyer, lea_stricte, HISTORIQUE).statut == Statut.ACCEPTE
+
+
+def test_courses_en_ligne_necessaires_pas_de_pause():
+    drive = achat("Supermarché du Coin", "courses", 45, QUATORZE_HEURES)
+    assert evaluer_achat(drive, LEA, HISTORIQUE).statut == Statut.ACCEPTE
 
 
 def test_blocage_strict_et_limite_depassee_refus():
@@ -73,23 +77,36 @@ def test_blocage_strict_et_limite_depassee_refus():
 
 def test_blocage_strict_sans_depassement_reste_une_simple_pause():
     lea_stricte = LEA.model_copy(update={"blocage_strict": True})
-    petit_achat_nocturne = achat("Bazar en Ligne", "autres", 25, UNE_HEURE_DU_MATIN)
-    decision = evaluer_achat(petit_achat_nocturne, lea_stricte, HISTORIQUE)
+    petit_achat = achat("Bazar en Ligne", "autres", 25, QUATORZE_HEURES)
+    decision = evaluer_achat(petit_achat, lea_stricte, HISTORIQUE)
     assert decision.statut == Statut.PAUSE
-    assert codes(decision) == {"nocturne"}
+    assert codes(decision) == {"confirmation"}
 
 
-# --- Limites et budget ---
+# --- L'heure n'a aucune importance ---
 
-def test_achat_raisonnable_en_journee_accepte():
+@pytest.mark.parametrize("heure", [1, 9, 14, 20, 23])
+def test_meme_decision_a_toute_heure(heure):
+    quand = datetime(2026, 10, 10, heure, 0)
+    decision = evaluer_achat(achat("Sneak'Air", "vetements", 89, quand), LEA, HISTORIQUE)
+    assert decision.statut == Statut.PAUSE
+    assert decision.delai_minutes == 30
+    assert codes(decision) == {"confirmation", "limite_categorie"}
+
+
+# --- Tout achat en ligne non nécessaire demande confirmation ---
+
+def test_petit_achat_sous_les_limites_demande_quand_meme_confirmation():
     tee_shirt = achat("Mode Urbaine", "vetements", 25, QUATORZE_HEURES)
-    assert evaluer_achat(tee_shirt, LEA, HISTORIQUE).statut == Statut.ACCEPTE
+    decision = evaluer_achat(tee_shirt, LEA, HISTORIQUE)
+    assert decision.statut == Statut.PAUSE
+    assert codes(decision) == {"confirmation"}
 
 
-def test_achat_pile_a_la_limite_accepte():
+def test_achat_pile_a_la_limite_sans_raison_supplementaire():
     # Les 89 € de baskets de septembre ne comptent pas pour octobre.
     tenue = achat("Mode Urbaine", "vetements", 60, QUATORZE_HEURES)
-    assert evaluer_achat(tenue, LEA, HISTORIQUE).statut == Statut.ACCEPTE
+    assert codes(evaluer_achat(tenue, LEA, HISTORIQUE)) == {"confirmation"}
 
 
 def test_budget_total_depasse():
@@ -101,52 +118,38 @@ def test_budget_total_depasse():
     jeu = achat("GameZone", "jeux_video", 10, QUATORZE_HEURES)  # sous la limite jeux (20 €)
     decision = evaluer_achat(jeu, LEA, octobre)
     assert decision.statut == Statut.PAUSE
-    assert codes(decision) == {"budget_total"}
+    assert codes(decision) == {"confirmation", "budget_total"}
     assert decision.delai_minutes == 30
 
 
-# --- Achat nocturne : 23 h – 4 h, au-delà de 20 € ---
-
-@pytest.mark.parametrize("heure, minute, statut_attendu", [
-    (22, 59, Statut.ACCEPTE),
-    (23, 0, Statut.PAUSE),
-    (3, 59, Statut.PAUSE),
-    (4, 0, Statut.ACCEPTE),
-])
-def test_limites_de_la_nuit(heure, minute, statut_attendu):
-    quand = datetime(2026, 10, 10, heure, minute)
-    decision = evaluer_achat(achat("Bazar en Ligne", "autres", 25, quand), LEA, [])
-    assert decision.statut == statut_attendu
-
-
-def test_20_euros_pile_la_nuit_accepte():
-    decision = evaluer_achat(achat("Bazar en Ligne", "autres", 20, UNE_HEURE_DU_MATIN), LEA, [])
-    assert decision.statut == Statut.ACCEPTE
+def test_courses_ne_comptent_pas_dans_le_budget_en_ligne():
+    octobre = [achat("Supermarché du Coin", "courses", 110, datetime(2026, 10, 2, 15, 0))]
+    jeu = achat("GameZone", "jeux_video", 15, QUATORZE_HEURES)
+    assert codes(evaluer_achat(jeu, LEA, octobre)) == {"confirmation"}
 
 
 def test_categorie_sans_delai_utilise_le_delai_par_defaut():
-    drive = achat("Supermarché du Coin", "courses", 45, UNE_HEURE_DU_MATIN)
-    decision = evaluer_achat(drive, LEA, [])
-    assert decision.statut == Statut.PAUSE
+    delais_sans_autres = {c: d for c, d in LEA.delais_minutes.items() if c != Categorie.AUTRES}
+    lea = LEA.model_copy(update={"delais_minutes": delais_sans_autres})
+    decision = evaluer_achat(achat("Bazar en Ligne", "autres", 10, QUATORZE_HEURES), lea, [])
     assert decision.delai_minutes == 15
 
 
-# --- Livraison de repas : pause à chaque commande ---
+# --- Livraison de repas : message renforcé dès la 2e commande en 7 jours ---
 
-def test_premiere_livraison_de_la_semaine_pause_quand_meme():
+def test_premiere_livraison_de_la_semaine_confirmation_simple():
     repas = achat("Pizza Minute", "livraison_repas", 12, datetime(2026, 10, 16, 20, 0))
     decision = evaluer_achat(repas, LEA, HISTORIQUE)  # dernière livraison le 8 : plus de 7 jours
     assert decision.statut == Statut.PAUSE
     assert decision.delai_minutes == 5
-    assert codes(decision) == {"categorie_impulsive"}
+    assert codes(decision) == {"confirmation"}
 
 
 def test_deuxieme_livraison_en_7_jours_message_renforce():
     repas = achat("Pizza Minute", "livraison_repas", 12, datetime(2026, 10, 10, 20, 0))
     decision = evaluer_achat(repas, LEA, HISTORIQUE)  # MiamExpress le 8 octobre
-    assert decision.statut == Statut.PAUSE
-    assert codes(decision) == {"categorie_impulsive", "repetition"}
-    assert "2e commande" in decision.regles[1].message
+    assert codes(decision) == {"confirmation", "repetition"}
+    assert "2e commande" in decision.regles[-1].message
 
 
 # --- Affichage des montants ---

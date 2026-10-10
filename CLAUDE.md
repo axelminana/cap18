@@ -38,7 +38,7 @@ Ce fichier donne à Claude Code tout le contexte du projet. Lis-le en entier ava
 **Solution :** une fonctionnalité intégrée à l'application bancaire (exemple de contexte : appli du Crédit Agricole).
 1. **Mon contrat :** le jeune renseigne ses revenus et dépenses obligatoires, fixe un **budget total pour ses achats en ligne** et des **limites par catégorie**, et règle ses **délais de réflexion par catégorie** (valeurs conseillées proposées).
 2. **Mon objectif :** il saisit un objectif (ex. : une voiture dans 2 ans, 3 000 €). Selon l'horizon (court ou long terme), l'appli conseille un plan d'épargne adapté et un montant mensuel.
-3. **La pause de réflexion :** lors d'un **achat en ligne** qui déclenche une règle, l'appli envoie une notification expliquant pourquoi, et l'achat est suspendu pendant le délai de la catégorie.
+3. **La pause de réflexion :** **tout achat en ligne non nécessaire**, à n'importe quelle heure, est suspendu pendant le délai de sa catégorie ; l'appli envoie une notification qui indique le délai et, le cas échéant, les règles dépassées (limite, budget, répétition).
 4. **La récompense :** s'il renonce, l'appli le félicite et lui propose de verser une somme conseillée vers son objectif.
 5. **Le bilan du mois :** il voit ce qu'il a économisé, choisit d'épargner ou non, et suit sa progression (tableau de score personnel).
 6. **Option blocage strict (désactivée par défaut) :** si activée, un achat qui dépasse une limite est refusé, pas seulement suspendu. Par défaut, l'utilisateur peut toujours dépasser s'il le veut vraiment, après le délai.
@@ -100,11 +100,13 @@ Séries de mois réussis, achats évités, montant total épargné, badges. **St
 | Autres (catégorie sans délai défini) | 15 min | Valeur par défaut |
 Pour la démo, le temps est **avancé** avec l'horloge simulée (bouton « +30 min »), sans modifier les délais.
 
-### Déclencheurs de la pause (uniquement canal = en ligne)
+### Pause de réflexion (uniquement canal = en ligne)
+**Tout achat en ligne non nécessaire est mis en pause, quelle que soit l'heure** (règle « confirmation ») : il faut confirmer après le délai de la catégorie. L'heure de l'achat n'a aucune importance. Sont nécessaires, donc jamais en pause et hors budget en ligne : loyer, factures, courses.
+
+Raisons supplémentaires affichées dans le message :
 - l'achat ferait dépasser la limite de sa catégorie ou le budget total en ligne du mois ;
-- achat nocturne : **entre 23 h et 4 h**, au-delà de **20 €** ;
-- **livraison de repas : pause à chaque commande**, même la première (on veut toujours dissuader ces achats) ; à partir de la **2e commande sur 7 jours glissants**, le message est renforcé (règle « répétition »).
-Chaque déclenchement renvoie la règle en cause, formulée en langage clair. Si plusieurs règles se déclenchent, elles sont toutes affichées ; le délai est celui de la catégorie.
+- livraison de repas : à partir de la **2e commande sur 7 jours glissants**, le message est renforcé (règle « répétition »).
+Chaque règle est formulée en langage clair ; toutes sont affichées ; le délai est celui de la catégorie. Le blocage strict ne refuse que les dépassements de limite ou de budget.
 À chaque pause, le message de confirmation indique le délai avant validation. **Si l'utilisateur annule, l'appli l'incite à verser une somme conseillée sur son épargne.**
 
 ### Mémorisation de l'achat suspendu
@@ -173,7 +175,7 @@ Règle simple et explicable (ex. 50 % du montant évité, arrondi), sans dépass
 - Avancer **par petites étapes**. Avant chaque étape, annoncer ce qui va être fait ; après, expliquer brièvement le code produit pour qu'Axel puisse le défendre devant le jury.
 - Préférer du code simple et lisible à du code astucieux.
 - Ne pas ajouter de fonctionnalités hors du périmètre ci-dessus sans demander.
-- Priorité absolue : une démo qui tourne sans crash. En cas de manque de temps, couper dans cet ordre : US4, option blocage strict, détection automatique (garder du pré-rempli), déclencheurs secondaires (garder « dépassement de limite » et « achat nocturne »).
+- Priorité absolue : une démo qui tourne sans crash. En cas de manque de temps, couper dans cet ordre : US4, option blocage strict, détection automatique (garder du pré-rempli), raisons secondaires (garder « confirmation » et « dépassement de limite »).
 - Répondre en français.
 - Tenir `ARCHITECTURE.md` à jour à la fin de chaque étape (technologies, arborescence, état d'avancement, choix de conception).
 - **Routine de travail, à chaque étape du plan :**
@@ -212,4 +214,4 @@ Cap 18. Dépenser, c'est facile. Choisir… ça s'apprend. »
 
 Tranché le samedi 14h45-14h50 : seuil court/long terme à 5 ans (Livret A / PEA), validité d'un achat mémorisé 24 h, désactivation du blocage strict immédiate, code en Python, stack JSON + Pydantic + FastAPI + front statique.
 
-Tranché le samedi après-midi : persona Léa, 18 ans ; objectif de démo = permis 1 800 € pour octobre 2027 ; délais par catégorie (§5) ; montants en `Decimal` ; nocturne 23 h – 4 h au-delà de 20 € ; pause à chaque livraison de repas, message renforcé dès la 2e sur 7 jours ; démo avec horloge simulée.
+Tranché le samedi après-midi : persona Léa, 18 ans ; objectif de démo = permis 1 800 € pour octobre 2027 ; délais par catégorie (§5) ; montants en `Decimal` ; pause sur tout achat en ligne non nécessaire quelle que soit l'heure (règle de nuit abandonnée), courses considérées comme nécessaires ; message renforcé dès la 2e livraison de repas sur 7 jours ; démo avec horloge simulée.
