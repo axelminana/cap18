@@ -59,6 +59,9 @@ def test_variante_a_par_l_api():
     proposition = client.post("/api/renoncer", json=BASKETS).json()
     assert proposition["somme_conseillee"] == "44"
     assert proposition["message"].startswith("Bravo")
+    # Le curseur : 50 % par défaut, et une somme pour chaque position (clés en texte en JSON).
+    assert proposition["pourcentage_conseille"] == 50
+    assert proposition["sommes_par_pourcentage"]["75"] == "66"
 
     reponse = client.post("/api/epargner", json={"montant": 44}).json()
     assert reponse["objectif"]["deja_epargne"] == "194"

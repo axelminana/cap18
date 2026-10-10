@@ -5,6 +5,7 @@ let etat = null;             // dernière réponse de /api/etat
 let bilan = null;            // dernière réponse de /api/bilan
 let score = null;            // dernière réponse de /api/score
 let dernierAffichage = "";   // pour ne redessiner que si quelque chose a changé
+let proposition = null;      // dernière réponse de /api/renoncer (sommes du curseur d'épargne)
 
 // --- Rafraîchissement ---
 
@@ -46,19 +47,40 @@ function afficherNotifications() {
 }
 
 async function renoncerA(achat) {
-  const proposition = await api("renoncer", "POST", { commercant: achat.commercant, montant: achat.montant });
-  const boutons = Number(proposition.somme_conseillee) > 0
-    ? `<button class="bouton-principal" data-epargner="${proposition.somme_conseillee}">
-         Épargner ${euros(proposition.somme_conseillee)}</button>
-       <button class="bouton-secondaire" data-fermer-felicitations>Pas cette fois</button>`
-    : `<button class="bouton-secondaire" data-fermer-felicitations>Fermer</button>`;
+  proposition = await api("renoncer", "POST", { commercant: achat.commercant, montant: achat.montant });
+  const sommeMaximale = Number(proposition.sommes_par_pourcentage[100]);
+  // Curseur : choisir le pourcentage du montant évité à épargner (50 % par défaut).
+  const contenu = sommeMaximale > 0
+    ? `<label class="curseur-epargne">
+         Part à épargner : <strong id="pourcentage-choisi"></strong>
+         <input type="range" id="curseur-epargne" min="0" max="100" step="5"
+                value="${proposition.pourcentage_conseille}" aria-label="Pourcentage à épargner">
+       </label>
+       ${sommeMaximale < Number(proposition.montant_evite)
+         ? `<p class="mention">Plafonné à ${euros(sommeMaximale)} : ton budget en ligne restant ce mois-ci.</p>` : ""}
+       <div class="boutons">
+         <button class="bouton-principal" id="bouton-epargner-curseur" data-epargner-curseur></button>
+         <button class="bouton-secondaire" data-fermer-felicitations>Pas cette fois</button>
+       </div>`
+    : `<div class="boutons"><button class="bouton-secondaire" data-fermer-felicitations>Fermer</button></div>`;
   document.getElementById("felicitations").innerHTML = `
     <article class="carte felicitations">
       <h2>🎉 Bien joué !</h2>
       <p>${echapper(proposition.message)}</p>
-      <div class="boutons">${boutons}</div>
+      ${contenu}
     </article>`;
+  if (sommeMaximale > 0) afficherCurseur();
   rafraichir();
+}
+
+// Met à jour le texte du curseur : la somme vient du tableau calculé par le serveur.
+function afficherCurseur() {
+  const pourcentage = document.getElementById("curseur-epargne").value;
+  const somme = proposition.sommes_par_pourcentage[pourcentage];
+  document.getElementById("pourcentage-choisi").textContent = `${pourcentage} % · ${euros(somme)}`;
+  const bouton = document.getElementById("bouton-epargner-curseur");
+  bouton.textContent = `Épargner ${euros(somme)}`;
+  bouton.disabled = Number(somme) === 0;
 }
 
 async function epargner(montant, zone, mois = null) {
@@ -294,7 +316,10 @@ document.body.addEventListener("click", async (evenement) => {
   try {
     if (d.onglet) ouvrirOnglet(d.onglet);
     else if (d.renoncer !== undefined) await renoncerA(etat.suspendus[Number(d.renoncer)]);
-    else if (d.epargner !== undefined) await epargner(d.epargner, "felicitations");
+    else if (d.epargnerCurseur !== undefined) {
+      const pourcentage = document.getElementById("curseur-epargne").value;
+      await epargner(proposition.sommes_par_pourcentage[pourcentage], "felicitations");
+    }
     else if (d.fermerFelicitations !== undefined) document.getElementById("felicitations").innerHTML = "";
     else if (d.fermerZone !== undefined) document.getElementById(d.fermerZone).innerHTML = "";
     else if (d.epargnerBilan !== undefined) await epargner(d.epargnerBilan, "bilan-pret", bilan.a_epargner);
@@ -312,6 +337,11 @@ document.body.addEventListener("click", async (evenement) => {
   } catch (erreur) {
     alert(erreur.message);
   }
+});
+
+// Le curseur d'épargne déclenche « input » à chaque déplacement.
+document.body.addEventListener("input", (evenement) => {
+  if (evenement.target.id === "curseur-epargne") afficherCurseur();
 });
 
 document.getElementById("formulaire-contrat").addEventListener("submit", (evenement) => {

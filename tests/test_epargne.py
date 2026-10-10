@@ -20,6 +20,8 @@ from app.epargne import (
     progression,
     proposition_apres_renoncement,
     somme_conseillee,
+    somme_pour_pourcentage,
+    sommes_par_pourcentage,
 )
 from app.models import Objectif, charger_donnees
 
@@ -106,6 +108,29 @@ def test_renoncement_aux_baskets_felicitations_et_incitation_a_epargner():
     assert proposition.somme_conseillee == Decimal("44")
     assert proposition.message.startswith("Bravo")
     assert "44 €" in proposition.message and "Permis de conduire" in proposition.message
+
+
+@pytest.mark.parametrize("pourcentage, restant, attendu", [
+    (50, "94.21", "44"),   # position par défaut
+    (0, "94.21", "0"),
+    (25, "94.21", "22"),   # 22,25 -> 22 €
+    (100, "94.21", "89"),  # tout le montant évité
+    (100, "60", "60"),     # plafonné au budget restant
+])
+def test_somme_pour_pourcentage(pourcentage, restant, attendu):
+    assert somme_pour_pourcentage(Decimal("89"), pourcentage, Decimal(restant)) == Decimal(attendu)
+
+
+def test_positions_du_curseur_de_5_en_5():
+    sommes = sommes_par_pourcentage(Decimal("89"), Decimal("94.21"))
+    assert list(sommes) == list(range(0, 101, 5))  # 0, 5, 10… 100
+    assert sommes[50] == Decimal("44") and sommes[100] == Decimal("89")
+
+
+def test_le_curseur_commence_a_50_pourcent():
+    proposition = proposition_apres_renoncement(Decimal("89"), Decimal("94.21"), PERMIS)
+    assert proposition.pourcentage_conseille == 50
+    assert proposition.sommes_par_pourcentage[50] == proposition.somme_conseillee
 
 
 def test_renoncement_sans_budget_restant_felicitations_seules():

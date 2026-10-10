@@ -98,6 +98,9 @@ button { font: inherit; cursor: pointer; }
 .boutons .bouton-principal, .boutons .bouton-secondaire { flex: 1; width: auto; margin-top: 0; }
 .partie { display: flex; gap: 8px; margin-top: 10px; }
 .partie input { flex: 1; min-width: 0; }
+.curseur-epargne { display: block; margin-top: 10px; }
+.curseur-epargne input { display: block; width: 100%; margin: 8px 0 4px; accent-color: var(--vert); }
+.bouton-principal:disabled { opacity: 0.5; cursor: default; }
 .lien { border: 0; background: none; color: var(--gris); text-decoration: underline; padding: 8px 0 0; }
 
 .barre { height: 10px; background: var(--gris-clair); border-radius: 999px; overflow: hidden; margin: 6px 0; }

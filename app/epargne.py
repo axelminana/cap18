@@ -15,7 +15,8 @@ from app.models import Objectif, Profil, Transaction
 from app.regles import achats_en_ligne_du_mois, format_euros
 
 SEUIL_LONG_TERME_MOIS = 5 * 12          # 5 ans ou plus = long terme
-PART_CONSEILLEE = Decimal("0.5")        # on propose d'épargner 50 % du montant évité
+POURCENTAGE_CONSEILLE = 50             # position par défaut du curseur : 50 % du montant évité
+PAS_DU_CURSEUR = 5                      # le curseur avance de 5 % en 5 % (0, 5, 10… 100)
 MENTION_SUGGESTION = "Suggestion indicative, pas un conseil en investissement."
 MENTION_PEA = "Placement en actions : le capital investi n'est pas garanti."
 
@@ -92,13 +93,29 @@ def plan_conseille(objectif: Objectif, aujourd_hui: date) -> PlanEpargne:
 class PropositionEpargne(BaseModel):
     montant_evite: Decimal
     somme_conseillee: Decimal
+    pourcentage_conseille: int
+    # Pour le curseur : pourcentage choisi -> somme à épargner, calculée ici et non en JavaScript.
+    sommes_par_pourcentage: dict[int, Decimal]
     message: str
 
 
+def somme_pour_pourcentage(montant_evite: Decimal, pourcentage: int, budget_restant: Decimal) -> Decimal:
+    """Le pourcentage du montant évité, arrondi à l'euro inférieur, sans dépasser le budget en ligne restant."""
+    part = (montant_evite * pourcentage / 100).quantize(Decimal("1"), rounding=ROUND_FLOOR)
+    return max(min(part, budget_restant), Decimal("0"))
+
+
 def somme_conseillee(montant_evite: Decimal, budget_restant: Decimal) -> Decimal:
-    """50 % du montant évité, arrondi à l'euro inférieur, sans dépasser le budget en ligne restant."""
-    moitie = (montant_evite * PART_CONSEILLEE).quantize(Decimal("1"), rounding=ROUND_FLOOR)
-    return max(min(moitie, budget_restant), Decimal("0"))
+    """La somme proposée par défaut : 50 % du montant évité."""
+    return somme_pour_pourcentage(montant_evite, POURCENTAGE_CONSEILLE, budget_restant)
+
+
+def sommes_par_pourcentage(montant_evite: Decimal, budget_restant: Decimal) -> dict[int, Decimal]:
+    """Toutes les positions du curseur : {0: 0, 5: 4, 10: 8, …, 100: 89} pour 89 € évités."""
+    return {
+        pourcentage: somme_pour_pourcentage(montant_evite, pourcentage, budget_restant)
+        for pourcentage in range(0, 101, PAS_DU_CURSEUR)
+    }
 
 
 def proposition_apres_renoncement(
@@ -111,7 +128,13 @@ def proposition_apres_renoncement(
             f" Et si tu mettais {format_euros(somme)} de côté "
             f"pour ton objectif « {objectif.nom} » ?"
         )
-    return PropositionEpargne(montant_evite=montant_evite, somme_conseillee=somme, message=message)
+    return PropositionEpargne(
+        montant_evite=montant_evite,
+        somme_conseillee=somme,
+        pourcentage_conseille=POURCENTAGE_CONSEILLE,
+        sommes_par_pourcentage=sommes_par_pourcentage(montant_evite, budget_restant),
+        message=message,
+    )
 
 
 def budget_restant(profil: Profil, transactions: list[Transaction], aujourd_hui: date) -> Decimal:
