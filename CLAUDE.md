@@ -49,7 +49,7 @@ Ce fichier donne à Claude Code tout le contexte du projet. Lis-le en entier ava
 - Les paiements en ligne par carte passent déjà par une validation dans l'appli bancaire (authentification forte, 3-D Secure) : la pause s'insère là où la banque intervient déjà.
 - Chaque transaction carte porte un code de catégorie du commerçant (MCC) : il permet de reconnaître automatiquement les catégories évidentes.
 
-**Persona :** Léa, 18 ans, premier appartement, premier job étudiant. Objectif : voir §10 (permis ou voiture, à harmoniser avec le pitch).
+**Persona :** Léa, 18 ans, premier appartement, premier job étudiant. Objectif : son permis de conduire (1 800 €, d'ici octobre 2027).
 
 **Proposition de valeur pour la banque :** engagement quotidien d'un jeune client, image de banque bienveillante, et épargne qui reste dans la banque, sur un produit adapté à l'objectif.
 
@@ -94,14 +94,18 @@ Séries de mois réussis, achats évités, montant total épargné, badges. **St
 |---|---|---|
 | Livraison de repas | 2 à 5 min | Achat urgent, délai court |
 | Vêtements / chaussures | 30 min | Moins urgent |
-| Autres catégories (électronique, jeux, etc.) | à définir (voir §10) | |
-Pour la démo, les délais doivent pouvoir être **accélérés** (secondes au lieu de minutes).
+| Électronique | 60 min | Achat coûteux |
+| Jeux vidéo | 30 min | |
+| Abonnements | 10 min | |
+| Autres (catégorie sans délai défini) | 15 min | Valeur par défaut |
+Pour la démo, le temps est **avancé** avec l'horloge simulée (bouton « +30 min »), sans modifier les délais.
 
 ### Déclencheurs de la pause (uniquement canal = en ligne)
 - l'achat ferait dépasser la limite de sa catégorie ou le budget total en ligne du mois ;
-- achat nocturne (ex. entre 23h et 6h) au-delà d'un montant ;
-- répétition dans une catégorie impulsive (ex. 3e livraison de repas de la semaine).
-Chaque déclenchement renvoie la règle en cause, formulée en langage clair.
+- achat nocturne : **entre 23 h et 4 h**, au-delà de **20 €** ;
+- **livraison de repas : pause à chaque commande**, même la première (on veut toujours dissuader ces achats) ; à partir de la **2e commande sur 7 jours glissants**, le message est renforcé (règle « répétition »).
+Chaque déclenchement renvoie la règle en cause, formulée en langage clair. Si plusieurs règles se déclenchent, elles sont toutes affichées ; le délai est celui de la catégorie.
+À chaque pause, le message de confirmation indique le délai avant validation. **Si l'utilisateur annule, l'appli l'incite à verser une somme conseillée sur son épargne.**
 
 ### Mémorisation de l'achat suspendu
 Les sites marchands abandonnent le paiement s'il n'est pas validé rapidement. Donc :
@@ -204,7 +208,8 @@ Cap 18. Dépenser, c'est facile. Choisir… ça s'apprend. »
 
 ## 10. Questions ouvertes (à trancher)
 
-- Objectif utilisé dans la démo (permis, voiture…) : à choisir par l'équipe.
-- Délais conseillés pour les autres catégories (électronique, jeux, abonnements…).
+- (aucune pour l'instant)
 
 Tranché le samedi 14h45-14h50 : seuil court/long terme à 5 ans (Livret A / PEA), validité d'un achat mémorisé 24 h, désactivation du blocage strict immédiate, code en Python, stack JSON + Pydantic + FastAPI + front statique.
+
+Tranché le samedi après-midi : persona Léa, 18 ans ; objectif de démo = permis 1 800 € pour octobre 2027 ; délais par catégorie (§5) ; montants en `Decimal` ; nocturne 23 h – 4 h au-delà de 20 € ; pause à chaque livraison de repas, message renforcé dès la 2e sur 7 jours ; démo avec horloge simulée.

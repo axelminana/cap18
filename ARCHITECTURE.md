@@ -2,7 +2,7 @@
 
 Document de référence pour le jury technique. Mis à jour à chaque étape du développement.
 
-**Dernière mise à jour :** samedi 10 octobre 2026 — étape 2 (horloge simulable).
+**Dernière mise à jour :** samedi 10 octobre 2026 — étape 3 (moteur de déclenchement).
 
 ## 1. Vue d'ensemble
 
@@ -53,13 +53,13 @@ Document de référence pour le jury technique. Mis à jour à chaque étape du 
 | `data/` | `profil.json` (Léa), `commercants.json` (13 commerçants fictifs), `transactions.json` (août → 8 octobre 2026) | ✅ fait |
 | `app/models.py` | Modèles Pydantic + chargement et validation des JSON | ✅ fait |
 | `app/horloge.py` | Horloge réelle ou simulée (avancer le temps, changer de mois) | ✅ fait |
-| `app/regles.py` | Déclencheurs de la pause, blocage strict | à faire (étape 3) |
+| `app/regles.py` | Déclencheurs de la pause, blocage strict | ✅ fait |
 | `app/suspension.py` | Mémorisation des achats suspendus (déblocage, expiration 24 h) | à faire (étape 4) |
 | `app/epargne.py` | Plan conseillé, somme conseillée, bilan mensuel | à faire (étape 5) |
 | `app/paiement.py` | Enchaîne règles + suspension pour un paiement | à faire (étape 6) |
 | `app/main.py` | API FastAPI + service du front | à faire (étape 7) |
 | `static/` | `boutique.html`, `banque.html`, `style.css`, `app.js` | à faire (étape 8) |
-| `tests/` | Un fichier de tests par module métier (`test_models.py` : 11 tests, `test_horloge.py` : 10 tests) | en cours |
+| `tests/` | Un fichier de tests par module métier (`test_models.py` : 11 tests, `test_horloge.py` : 10 tests, `test_regles.py` : 20 tests) | en cours |
 
 ## 4. Plan de développement
 
@@ -68,7 +68,7 @@ Document de référence pour le jury technique. Mis à jour à chaque étape du 
 | 0 | Environnement virtuel, dépendances, `.gitignore` | ✅ fait |
 | 1 | Modèles Pydantic + données fictives | ✅ fait |
 | 2 | Horloge simulable | ✅ fait |
-| 3 | Moteur de déclenchement | à faire |
+| 3 | Moteur de déclenchement | ✅ fait |
 | 4 | Mémorisation des achats suspendus | à faire |
 | 5 | Épargne : plan, somme conseillée, bilan | à faire |
 | 6 | Orchestration d'un paiement | à faire |
@@ -84,12 +84,10 @@ Document de référence pour le jury technique. Mis à jour à chaque étape du 
 - **Validation à deux niveaux :** chaque champ a ses contraintes (montant > 0, âge entre 18 et 25), puis un contrôle de cohérence du profil (une limite ne dépasse pas le budget en ligne).
 - **Données de Léa :** revenus 850 €, obligatoires 490 €, budget en ligne 120 €, objectif permis 1 800 € pour octobre 2027. Septembre est volontairement un mois de dépassement (baskets à 1 h, livraisons répétées).
 - **Horloge à deux modes :** réelle par défaut, ou simulée (heure fixée qui n'avance que sur demande : « +30 min », « mois suivant » au 1er à 9 h). Le temps ne peut pas reculer. Seule l'API l'utilise pour fournir `maintenant` aux fonctions métier.
+- **Moteur de déclenchement (`evaluer_achat`) :** l'heure de l'achat est portée par l'achat lui-même (`date_heure`), la fonction n'a donc pas besoin de l'horloge. Elle calcule **toutes** les règles, puis décide dans cet ordre : hors périmètre → accepté ; blocage strict + dépassement de limite → refusé ; au moins une règle → pause (délai de la catégorie, 15 min par défaut) ; sinon accepté.
+- **Règles :** limite de catégorie, budget total en ligne du mois, nocturne (23 h – 4 h, > 20 €), livraison de repas toujours en pause, avec message « répétition » dès la 2e commande sur 7 jours glissants. Chaque règle a un `code` stable (pour le front et les tests) et un `message` en langage clair.
 - **État passé en paramètre :** la liste des achats suspendus est donnée à la fonction, qui renvoie la nouvelle liste. Seule l'API garde l'état en mémoire.
 
-### Propositions en attente de validation par l'équipe
-- Achat nocturne : 23 h – 6 h, au-delà de 20 €.
-- Répétition : 3e livraison de repas sur 7 jours glissants.
-- Plusieurs déclencheurs : tous affichés, délai = celui de la catégorie.
 
 ## 6. Lancer le projet
 
