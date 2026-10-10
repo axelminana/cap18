@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 from decimal import Decimal
 
 from app.models import Transaction
+from app.regles import RegleDeclenchee
 from app.suspension import EtatTentative, memoriser, retirer, verifier_tentative
 
 PREMIER_ESSAI = datetime(2026, 10, 10, 1, 0)
@@ -109,3 +110,9 @@ def test_plusieurs_achats_suspendus_en_meme_temps():
 def test_retirer_un_achat():
     assert retirer(SUSPENDUS[0], SUSPENDUS) == []
     assert len(SUSPENDUS) == 1  # la liste d'origine n'a pas bougé
+
+
+def test_l_achat_memorise_garde_les_raisons_de_la_pause():
+    regles = [RegleDeclenchee(code="confirmation", message="30 min de réflexion")]
+    liste = memoriser(baskets(PREMIER_ESSAI), DELAI_VETEMENTS, [], regles)
+    assert liste[0].regles == regles

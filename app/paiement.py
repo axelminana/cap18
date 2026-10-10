@@ -87,7 +87,7 @@ def payer(compte: Compte, achat: Transaction) -> tuple[Compte, ResultatPaiement]
         )
 
     # 3. Pause : la banque refuse ce premier essai et mémorise l'achat.
-    suspendus = memoriser(achat, decision.delai_minutes, compte.suspendus)
+    suspendus = memoriser(achat, decision.delai_minutes, compte.suspendus, decision.regles)
     memorise = suspendus[-1]
     return compte.model_copy(update={"suspendus": suspendus}), ResultatPaiement(
         statut=StatutPaiement.PAUSE,

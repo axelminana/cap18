@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Appli bancaire de Léa</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="appli">
+  <header class="appli-entete">
+    <div>
+      <small>Ma banque · Cap 18</small>
+      <h1>Bonjour Léa</h1>
+    </div>
+    <span id="heure" class="heure"></span>
+  </header>
+
+  <nav class="onglets">
+    <button data-onglet="accueil" class="actif">Accueil</button>
+    <button data-onglet="bilan">Bilan</button>
+    <button data-onglet="contrat">Mon contrat</button>
+  </nav>
+
+  <main>
+    <section id="onglet-accueil">
+      <div id="felicitations"></div>   <!-- après un renoncement -->
+      <div id="bilan-pret"></div>      <!-- fin de mois : épargner ses économies -->
+      <div id="notifications"></div>   <!-- achats en pause de réflexion -->
+      <div id="objectif"></div>
+      <div id="budget"></div>
+    </section>
+
+    <section id="onglet-bilan" hidden></section>
+
+    <section id="onglet-contrat" hidden>
+      <form id="formulaire-contrat"></form>
+      <p id="contrat-message" class="message-formulaire"></p>
+    </section>
+  </main>
+
+  <script src="commun.js"></script>
+  <script src="banque.js"></script>
+</body>
+</html>

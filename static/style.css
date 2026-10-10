@@ -1,0 +1,126 @@
+/* Style commun aux trois pages : démo, boutique fictive, appli bancaire. */
+
+:root {
+  --vert: #0b7a5c;
+  --vert-clair: #e3f4ee;
+  --orange: #f08a24;
+  --orange-clair: #fff3e6;
+  --rouge: #c0392b;
+  --gris: #6b7280;
+  --gris-clair: #f3f4f6;
+  --texte: #1f2937;
+  --rayon: 14px;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  color: var(--texte);
+  line-height: 1.45;
+}
+
+button { font: inherit; cursor: pointer; }
+
+/* ---------- Page de démo : deux écrans côte à côte ---------- */
+
+.page-demo { background: #1e293b; color: #f8fafc; min-height: 100vh; display: flex; flex-direction: column; }
+.demo-entete { text-align: center; padding: 16px 16px 4px; }
+.demo-entete h1 { margin: 0; font-size: 2rem; letter-spacing: 0.04em; }
+.demo-entete p { margin: 4px 0 0; color: #cbd5e1; font-style: italic; }
+
+.demo-ecrans { flex: 1; display: flex; gap: 32px; justify-content: center; align-items: flex-start; padding: 16px; flex-wrap: wrap; }
+.ecran h2 { font-size: 0.9rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: #94a3b8; margin: 0 0 8px; }
+.ecran-boutique iframe { width: min(640px, 92vw); height: 720px; border: 0; border-radius: var(--rayon); background: #fff; }
+.telephone { width: 390px; height: 760px; padding: 14px; background: #0f172a; border-radius: 44px; box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5); }
+.telephone iframe { width: 100%; height: 100%; border: 0; border-radius: 32px; background: #fff; }
+
+.demo-controles { display: flex; gap: 10px; align-items: center; justify-content: center; flex-wrap: wrap; padding: 12px 16px 18px; background: #0f172a; }
+.demo-controles button { border: 0; border-radius: 999px; padding: 8px 16px; background: #334155; color: #f8fafc; }
+.demo-controles button:hover { background: #475569; }
+.demo-controles .discret { background: transparent; border: 1px solid #475569; }
+
+/* ---------- Boutique fictive ---------- */
+
+.boutique { background: #fafafa; }
+.boutique-entete { display: flex; justify-content: space-between; align-items: center; padding: 14px 20px; background: #111; color: #fff; }
+.logo { font-weight: 800; letter-spacing: 0.12em; }
+.mention { font-size: 0.75rem; color: #aaa; }
+
+.produits { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; padding: 20px; }
+.produit { background: #fff; border-radius: var(--rayon); padding: 16px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06); display: flex; flex-direction: column; }
+.produit .visuel { font-size: 4rem; text-align: center; background: var(--gris-clair); border-radius: 10px; padding: 12px 0; }
+.produit h2 { font-size: 1.05rem; margin: 12px 0 2px; }
+.vendeur { color: var(--gris); font-size: 0.85rem; margin: 0; }
+.prix { font-size: 1.4rem; font-weight: 700; margin: 8px 0 12px; }
+.bouton-payer { margin-top: auto; border: 0; border-radius: 10px; padding: 12px; background: #111; color: #fff; font-weight: 600; }
+.bouton-payer:hover { background: #333; }
+
+.paiement { position: relative; margin: 16px 20px 0; padding: 14px 44px 14px 18px; border-radius: var(--rayon); }
+.paiement h2 { margin: 0 0 6px; font-size: 1.1rem; }
+.paiement p { margin: 4px 0; }
+.paiement .bouton-payer { margin-top: 8px; }
+.paiement.accepte { background: var(--vert-clair); }
+.paiement.pause { background: var(--orange-clair); }
+.paiement.refuse, .paiement.erreur { background: #fdecea; }
+.fermer { position: absolute; top: 8px; right: 10px; border: 0; background: none; font-size: 1.4rem; color: var(--gris); }
+
+/* ---------- Appli bancaire (vue mobile) ---------- */
+
+.appli { background: var(--gris-clair); min-height: 100vh; font-size: 0.95rem; }
+.appli-entete { display: flex; justify-content: space-between; align-items: flex-end; padding: 22px 16px 14px; background: var(--vert); color: #fff; }
+.appli-entete small { opacity: 0.85; }
+.appli-entete h1 { margin: 2px 0 0; font-size: 1.4rem; }
+.heure { font-size: 0.8rem; opacity: 0.9; text-align: right; }
+
+.onglets { display: flex; background: #fff; border-bottom: 1px solid #e5e7eb; position: sticky; top: 0; }
+.onglets button { flex: 1; border: 0; background: none; padding: 12px 4px; color: var(--gris); border-bottom: 3px solid transparent; }
+.onglets button.actif { color: var(--vert); border-bottom-color: var(--vert); font-weight: 600; }
+
+.appli main { padding: 12px; }
+.carte { background: #fff; border-radius: var(--rayon); padding: 14px 16px; margin-bottom: 12px; box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06); }
+.carte h2 { font-size: 1rem; margin: 0 0 8px; }
+.carte p { margin: 6px 0; }
+
+.notification { border-left: 5px solid var(--orange); }
+.achat { font-size: 1.05rem; }
+.raisons { margin: 8px 0; padding-left: 18px; }
+.raisons li { margin-bottom: 4px; }
+.compte-a-rebours { background: var(--orange-clair); border-radius: 8px; padding: 8px 10px; }
+.debloque { background: var(--vert-clair); border-radius: 8px; padding: 8px 10px; }
+
+.felicitations, .bilan-pret { border-left: 5px solid var(--vert); }
+.boutons { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+.bouton-principal { border: 0; border-radius: 10px; padding: 11px 14px; background: var(--vert); color: #fff; font-weight: 600; width: 100%; margin-top: 6px; }
+.bouton-principal:hover { filter: brightness(1.1); }
+.bouton-secondaire { border: 1px solid var(--vert); border-radius: 10px; padding: 10px 14px; background: #fff; color: var(--vert); font-weight: 600; }
+.boutons .bouton-principal, .boutons .bouton-secondaire { flex: 1; width: auto; margin-top: 0; }
+.partie { display: flex; gap: 8px; margin-top: 10px; }
+.partie input { flex: 1; min-width: 0; }
+.lien { border: 0; background: none; color: var(--gris); text-decoration: underline; padding: 8px 0 0; }
+
+.barre { height: 10px; background: var(--gris-clair); border-radius: 999px; overflow: hidden; margin: 6px 0; }
+.barre-remplie { height: 100%; background: var(--vert); border-radius: 999px; transition: width 0.6s ease; }
+.progression { font-size: 1rem; }
+.mention { font-size: 0.75rem; color: var(--gris); }
+
+.historique { list-style: none; padding: 0; margin: 0; }
+.historique li { display: flex; justify-content: space-between; gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--gris-clair); }
+.historique li:last-child { border-bottom: 0; }
+.historique li span:first-child { text-transform: capitalize; }
+
+/* Formulaire « Mon contrat » */
+#formulaire-contrat label { display: block; margin: 8px 0; font-size: 0.9rem; }
+#formulaire-contrat input[type="number"], #formulaire-contrat input[type="text"], #formulaire-contrat input[type="date"], .partie input {
+  display: block; width: 100%; margin-top: 3px; padding: 8px 10px; border: 1px solid #d1d5db; border-radius: 8px; font: inherit;
+}
+#formulaire-contrat label.case { display: flex; gap: 8px; align-items: flex-start; }
+.regles-categories { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+.regles-categories th { text-align: left; color: var(--gris); font-weight: 500; padding: 4px 2px; }
+.regles-categories td { padding: 4px 2px; vertical-align: top; }
+.regles-categories input { padding: 6px !important; }
+.regles-categories small { color: var(--gris); font-size: 0.7rem; }
+.message-formulaire { padding: 0 4px; }
+.message-formulaire.succes { color: var(--vert); }
+.message-formulaire.erreur { color: var(--rouge); }

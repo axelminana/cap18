@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cap 18 — démo</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="page-demo">
+  <header class="demo-entete">
+    <h1>Cap 18</h1>
+    <p>Dépenser, c'est facile. Choisir… ça s'apprend.</p>
+  </header>
+
+  <main class="demo-ecrans">
+    <section class="ecran ecran-boutique">
+      <h2>Un site marchand</h2>
+      <iframe id="cadre-boutique" src="boutique.html" title="Boutique en ligne"></iframe>
+    </section>
+    <section class="ecran ecran-telephone">
+      <h2>L'appli bancaire de Léa</h2>
+      <div class="telephone">
+        <iframe id="cadre-banque" src="banque.html" title="Appli bancaire de Léa"></iframe>
+      </div>
+    </section>
+  </main>
+
+  <footer class="demo-controles">
+    <span>Heure de la démo : <strong id="heure-demo">…</strong></span>
+    <button data-minutes="1">+1 min</button>
+    <button data-minutes="5">+5 min</button>
+    <button data-minutes="30">+30 min</button>
+    <button id="mois-suivant">Fin du mois</button>
+    <button id="reinitialiser" class="discret">Réinitialiser la démo</button>
+  </footer>
+
+  <script src="commun.js"></script>
+  <script src="demo.js"></script>
+</body>
+</html>

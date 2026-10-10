@@ -42,6 +42,16 @@ LIBELLES_CATEGORIES = {
     Categorie.AUTRES: "autres",
 }
 
+# Délais de réflexion conseillés (en minutes), affichés à côté des choix de l'utilisateur.
+DELAIS_CONSEILLES = {
+    Categorie.LIVRAISON_REPAS: 5,
+    Categorie.VETEMENTS: 30,
+    Categorie.ELECTRONIQUE: 60,
+    Categorie.JEUX_VIDEO: 30,
+    Categorie.ABONNEMENTS: 10,
+    Categorie.AUTRES: 15,
+}
+
 # Dépenses nécessaires : jamais de pause, jamais de limite, hors budget en ligne.
 CATEGORIES_OBLIGATOIRES = {Categorie.LOYER, Categorie.FACTURES, Categorie.COURSES}
 

@@ -120,3 +120,18 @@ def test_reinitialiser_remet_la_demo_a_zero():
     donnees = client.post("/api/reinitialiser").json()
     assert donnees["suspendus"] == []
     assert donnees["maintenant"] == "2026-10-10T01:00:00"
+
+
+# --- Front : les pages sont servies ---
+
+@pytest.mark.parametrize("page", ["/", "/boutique.html", "/banque.html", "/style.css", "/commun.js"])
+def test_pages_du_front_servies(page):
+    assert client.get(page).status_code == 200
+
+
+def test_l_appli_recoit_les_raisons_de_la_pause_et_les_libelles():
+    client.post("/api/paiement", json=BASKETS)
+    donnees = client.get("/api/etat").json()
+    assert {r["code"] for r in donnees["suspendus"][0]["regles"]} == {"confirmation", "limite_categorie"}
+    assert donnees["libelles_categories"]["vetements"] == "vêtements"
+    assert donnees["delais_conseilles"]["vetements"] == 30

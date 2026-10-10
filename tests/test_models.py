@@ -6,7 +6,7 @@ from decimal import Decimal
 import pytest
 from pydantic import ValidationError
 
-from app.models import LIBELLES_CATEGORIES, Categorie, Profil, Transaction, charger_donnees
+from app.models import DELAIS_CONSEILLES, LIBELLES_CATEGORIES, Categorie, Profil, Transaction, charger_donnees
 
 
 def profil_valide() -> dict:
@@ -116,3 +116,7 @@ def test_fichier_invalide_indique_le_nom_du_fichier(tmp_path):
 
 def test_chaque_categorie_a_un_libelle():
     assert set(LIBELLES_CATEGORIES) == set(Categorie)
+
+
+def test_les_delais_de_lea_sont_les_delais_conseilles():
+    assert charger_donnees().profil.delais_minutes == DELAIS_CONSEILLES

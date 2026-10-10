@@ -17,7 +17,7 @@ from pydantic import BaseModel, Field
 
 from app.epargne import bilan_mensuel, budget_restant, historique, plan_conseille, progression
 from app.horloge import Horloge
-from app.models import Canal, Profil, Transaction, charger_donnees
+from app.models import DELAIS_CONSEILLES, LIBELLES_CATEGORIES, Canal, Profil, Transaction, charger_donnees
 from app.paiement import compte_initial, payer, renoncer, verser_epargne
 from app.suspension import est_expire
 
@@ -85,6 +85,8 @@ def lire_etat():
         "progression": progression(compte.profil.objectif),
         "budget_restant": budget_restant(compte.profil, compte.transactions, maintenant.date()),
         "suspendus": suspendus,
+        "libelles_categories": LIBELLES_CATEGORIES,
+        "delais_conseilles": DELAIS_CONSEILLES,
     }
 
 
