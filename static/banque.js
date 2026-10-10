@@ -291,7 +291,8 @@ function ouvrirOnglet(nom) {
 
 document.body.addEventListener("click", async (evenement) => {
   const bouton = evenement.target.closest("button");
-  if (!bouton || bouton.type === "submit") return;
+  // Le bouton du formulaire « Mon contrat » est géré par l'événement « submit » plus bas.
+  if (!bouton || bouton.closest("form")) return;
   const d = bouton.dataset;
   try {
     if (d.onglet) ouvrirOnglet(d.onglet);
