@@ -2,7 +2,7 @@
 
 Document de référence pour le jury technique. Mis à jour à chaque étape du développement.
 
-**Dernière mise à jour :** samedi 10 octobre 2026 — étape 6 (orchestration d'un paiement). Toute la logique métier de la démo est écrite et testée.
+**Dernière mise à jour :** samedi 10 octobre 2026 — étape 7 (API FastAPI).
 
 ## 1. Vue d'ensemble
 
@@ -36,6 +36,7 @@ Document de référence pour le jury technique. Mis à jour à chaque étape du 
 | pytest | 9.1.1 | Tests des fonctions métier | Standard Python, tests courts et lisibles |
 | FastAPI | 0.143.0 | API JSON + service des pages | S'appuie sur Pydantic, peu de code, documentation auto (`/docs`) utile en démo |
 | Uvicorn | 0.54.0 | Serveur qui exécute FastAPI | Serveur recommandé par FastAPI, une seule commande pour lancer |
+| httpx | 0.28.1 | Requis par le `TestClient` de FastAPI | Tests de l'API uniquement ; aucun rôle dans l'application |
 | HTML / CSS / JS | — | Deux pages statiques | Pas de framework : rien à installer, rien à compiler |
 | JSON | — | Données fictives | Lisible, modifiable à la main, suffisant pour un MVP |
 
@@ -57,9 +58,9 @@ Document de référence pour le jury technique. Mis à jour à chaque étape du 
 | `app/suspension.py` | Mémorisation des achats suspendus (déblocage, expiration 24 h) | ✅ fait |
 | `app/epargne.py` | Plan conseillé, somme conseillée après renoncement, bilan mensuel, progression | ✅ fait |
 | `app/paiement.py` | `Compte` (profil + transactions + achats suspendus), `payer`, `renoncer`, `verser_epargne` | ✅ fait |
-| `app/main.py` | API FastAPI + service du front | à faire (étape 7) |
-| `static/` | `boutique.html`, `banque.html`, `style.css`, `app.js` | à faire (étape 8) |
-| `tests/` | Un fichier de tests par module métier (`test_models.py` : 12, `test_horloge.py` : 10, `test_regles.py` : 22, `test_suspension.py` : 12, `test_epargne.py` : 24, `test_paiement.py` : 10 — 90 tests) | en cours |
+| `app/main.py` | API FastAPI (routes `/api/...`) + service des pages de `static/` | ✅ fait |
+| `static/` | `boutique.html`, `banque.html`, `style.css`, `app.js` (dossier créé, vide) | à faire (étape 8) |
+| `tests/` | Un fichier de tests par module (`test_models.py` : 13, `test_horloge.py` : 10, `test_regles.py` : 23, `test_suspension.py` : 12, `test_epargne.py` : 24, `test_paiement.py` : 10, `test_api.py` : 13 — 105 tests) | ✅ fait |
 
 ## 4. Plan de développement
 
@@ -72,7 +73,7 @@ Document de référence pour le jury technique. Mis à jour à chaque étape du 
 | 4 | Mémorisation des achats suspendus | ✅ fait |
 | 5 | Épargne : plan, somme conseillée, bilan | ✅ fait |
 | 6 | Orchestration d'un paiement | ✅ fait |
-| 7 | API FastAPI | à faire |
+| 7 | API FastAPI | ✅ fait |
 | 8 | Front statique + répétition de la démo | à faire |
 | 9 | (facultatif) Tableau de score US4 | à faire |
 
@@ -89,6 +90,7 @@ Document de référence pour le jury technique. Mis à jour à chaque étape du 
 - **Mémorisation (`suspension.py`) :** `verifier_tentative` renvoie l'un des 3 états : `nouvel_achat` (rien de mémorisé, montant ou commerçant différent, ou achat expiré), `toujours_suspendu` (avec les secondes restantes, pour le compte à rebours), `debloque`. `memoriser` ajoute l'achat (heure de déblocage = essai + délai) et nettoie les achats expirés ; `retirer` l'enlève une fois payé ou abandonné. Le temps est porté par l'achat (`date_heure`). Un délai de réflexion doit être inférieur à 24 h (contrôlé dans `Profil`), sinon l'achat expirerait avant d'être débloqué.
 - **Épargne (`epargne.py`) :** plan conseillé = Livret A si moins de 5 ans (60 mois), PEA sinon (mention « capital non garanti ») ; versement mensuel = reste à épargner / mois restants, arrondi à l'euro supérieur (au moins 1 mois, jamais de division par zéro). Après un renoncement : félicitations + somme conseillée = 50 % du montant évité, arrondie à l'euro inférieur, plafonnée au budget en ligne restant (0 si dépassé). Bilan = budget − achats en ligne du mois (0 si négatif) ; l'historique ne contient que les mois terminés. `epargner` renvoie un nouvel objectif (tout, une partie ou rien). Le calcul « achats en ligne du mois » est partagé avec `regles.py` (`achats_en_ligne_du_mois`).
 - **Orchestration (`paiement.py`) :** tout l'état de Léa tient dans un seul objet `Compte`. `payer(compte, achat)` renvoie `(nouveau_compte, résultat)` : achat déjà mémorisé et encore en délai → pause avec temps restant ; mémorisé et débloqué → accepté, enregistré et retiré des suspendus ; sinon on applique les règles → accepté (enregistré), refusé (rien n'est stocké) ou pause (mémorisé). `renoncer` retire l'achat suspendu et renvoie félicitations + somme conseillée ; `verser_epargne` met à jour l'objectif. Les tests jouent la démo de bout en bout avec l'horloge simulée.
+- **API (`main.py`) :** un seul objet `EtatDemo` en mémoire (compte de Léa + horloge, démo au 10/10/2026 à 1 h). Chaque route lit l'état, appelle une fonction métier, enregistre le nouvel état. La boutique n'envoie que le commerçant et le montant : la catégorie est **détectée automatiquement** via `commercants.json` (comme un code MCC). Erreurs renvoyées proprement : 404 (commerçant inconnu, aucun achat à abandonner), 400 (temps en arrière), 422 (donnée invalide, via Pydantic). Les montants `Decimal` sont envoyés en JSON sous forme de texte (`"89"`) pour garder les centimes exacts. Libellés lisibles des catégories (`LIBELLES_CATEGORIES`) pour les messages.
 - **État passé en paramètre :** la liste des achats suspendus est donnée à la fonction, qui renvoie la nouvelle liste. Seule l'API garde l'état en mémoire.
 
 
@@ -98,5 +100,24 @@ Document de référence pour le jury technique. Mis à jour à chaque étape du 
 python -m venv .venv
 .venv\Scripts\Activate.ps1
 pip install -r requirements.txt
-pytest
+pytest                              # 105 tests
+uvicorn app.main:app --reload       # puis http://127.0.0.1:8000
 ```
+
+Documentation interactive de l'API : http://127.0.0.1:8000/docs
+
+## 7. Routes de l'API
+
+| Méthode | Route | Rôle |
+|---|---|---|
+| GET | `/api/etat` | Profil, plan conseillé, progression, budget restant, achats en pause (avec secondes restantes) |
+| GET | `/api/commercants` | Commerçants de la boutique |
+| GET | `/api/bilan` | Historique des mois terminés + mois en cours |
+| PUT | `/api/profil` | Modifier le contrat (limites, délais, blocage strict, objectif) |
+| POST | `/api/paiement` | `{commercant, montant, canal?}` → accepté / pause / refusé |
+| POST | `/api/renoncer` | `{commercant, montant}` → félicitations + somme conseillée |
+| POST | `/api/epargner` | `{montant}` → objectif mis à jour + progression |
+| GET | `/api/horloge` | Heure de la démo |
+| POST | `/api/horloge/avancer` | `{minutes}` → avance le temps |
+| POST | `/api/horloge/mois-suivant` | Passe au 1er du mois suivant à 9 h |
+| POST | `/api/reinitialiser` | Remet la démo à zéro |

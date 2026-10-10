@@ -6,7 +6,7 @@ from decimal import Decimal
 import pytest
 from pydantic import ValidationError
 
-from app.models import Categorie, Profil, Transaction, charger_donnees
+from app.models import LIBELLES_CATEGORIES, Categorie, Profil, Transaction, charger_donnees
 
 
 def profil_valide() -> dict:
@@ -112,3 +112,7 @@ def test_fichier_invalide_indique_le_nom_du_fichier(tmp_path):
     (tmp_path / "transactions.json").write_text("[]", encoding="utf-8")
     with pytest.raises(ValueError, match="profil.json"):
         charger_donnees(tmp_path)
+
+
+def test_chaque_categorie_a_un_libelle():
+    assert set(LIBELLES_CATEGORIES) == set(Categorie)

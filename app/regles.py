@@ -14,7 +14,7 @@ from enum import Enum
 
 from pydantic import BaseModel
 
-from app.models import CATEGORIES_OBLIGATOIRES, Canal, Categorie, Profil, Transaction
+from app.models import CATEGORIES_OBLIGATOIRES, LIBELLES_CATEGORIES, Canal, Categorie, Profil, Transaction
 
 # Répétition : message renforcé à partir de la 2e commande sur 7 jours glissants.
 CATEGORIES_REPETITION = {Categorie.LIVRAISON_REPAS}
@@ -69,7 +69,7 @@ def evaluer_achat(achat: Transaction, profil: Profil, transactions: list[Transac
     if not est_achat_surveille(achat):
         return Decision(statut=Statut.ACCEPTE)
 
-    nom_categorie = achat.categorie.value.replace("_", " ")
+    nom_categorie = LIBELLES_CATEGORIES[achat.categorie]
     delai = profil.delais_minutes.get(achat.categorie, DELAI_PAR_DEFAUT_MINUTES)
 
     # 2. Règle de base : tout achat en ligne non nécessaire demande une confirmation.

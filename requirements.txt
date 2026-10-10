@@ -3,3 +3,4 @@ fastapi==0.143.0   # API web qui expose la logique métier en JSON
 uvicorn==0.54.0    # serveur qui fait tourner l'application FastAPI
 pydantic==2.14.0   # modèles de données et validation des fichiers JSON
 pytest==9.1.1      # tests des fonctions métier
+httpx==0.28.1      # requis par le TestClient de FastAPI (tests de l'API uniquement)

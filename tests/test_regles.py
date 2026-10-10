@@ -161,3 +161,8 @@ def test_deuxieme_livraison_en_7_jours_message_renforce():
 ])
 def test_format_euros(montant, texte):
     assert format_euros(montant) == texte
+
+
+def test_categorie_affichee_avec_ses_accents():
+    decision = evaluer_achat(BASKETS_LA_NUIT, LEA, HISTORIQUE)
+    assert "« vêtements »" in decision.regles[0].message

@@ -29,6 +29,19 @@ class Categorie(str, Enum):
     AUTRES = "autres"
 
 
+# Noms affichés à l'utilisateur.
+LIBELLES_CATEGORIES = {
+    Categorie.LOYER: "loyer",
+    Categorie.FACTURES: "factures",
+    Categorie.COURSES: "courses",
+    Categorie.LIVRAISON_REPAS: "livraison de repas",
+    Categorie.VETEMENTS: "vêtements",
+    Categorie.ELECTRONIQUE: "électronique",
+    Categorie.JEUX_VIDEO: "jeux vidéo",
+    Categorie.ABONNEMENTS: "abonnements",
+    Categorie.AUTRES: "autres",
+}
+
 # Dépenses nécessaires : jamais de pause, jamais de limite, hors budget en ligne.
 CATEGORIES_OBLIGATOIRES = {Categorie.LOYER, Categorie.FACTURES, Categorie.COURSES}
 
